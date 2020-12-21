@@ -25,17 +25,23 @@ type RemoteDev struct {
 }
 
 type RequestRemoteDev struct {
-	Name         string `json:"name"`           // 患者名称
-	AdmInPatNo   string `json:"adm_in_pat_no"`  // 患者住院号
-	DevCode      string `json:"dev_code"`       // 设备代码
-	PacRoomDesc  string `json:"pac_room_desc"`  // 房号
-	PacBedDesc   string `json:"pac_bed_desc"`   // 床号
-	CtHospitalId string `json:"ct_hospital_id"` // 医院id
-	DevStatus    string `json:"dev_status"`     // 设备状态
-	DevAction    string `json:"dev_active"`     // 设备状态
+	Name        string `json:"name"`          // 患者名称
+	AdmInPatNo  string `json:"adm_in_pat_no"` // 患者住院号
+	DevCode     string `json:"dev_code"`      // 设备代码
+	PacRoomDesc string `json:"pac_room_desc"` // 房号
+	PacBedDesc  string `json:"pac_bed_desc"`  // 床号
+	DevStatus   string `json:"dev_status"`    // 设备状态
+	DevAction   string `json:"dev_active"`    // 设备状态
 }
 
 func Sync() error {
+	if err := utils.GetToken(); err != nil {
+		return err
+	}
+	if err := utils.GetAppInfo(); err != nil {
+		return err
+	}
+
 	if Sqlite == nil {
 		return errors.New("database is not init")
 	}
@@ -45,7 +51,7 @@ func Sync() error {
 	query += " left join pa_patmas on pa_patmas.pmi_id = pa_adm.pa_patmas_id"
 	query += " left join pac_room on pac_room.room_id = cf_device.pac_room_id"
 	query += " left join pac_bed on pac_bed.bed_id = cf_device.pac_bed_id"
-	query += " where cf_device.dev_type = 2"
+	query += fmt.Sprintf(" where cf_device.dev_type = 2 and pa_adm.ct_hospital_id = %d", utils.GetAppInfoCache().CtHospitalId)
 
 	rows, err := Mysql.Raw(query).Rows()
 	if err != nil {
@@ -76,14 +82,13 @@ func Sync() error {
 		newRemoteDevs = remoteDevs
 		for _, re := range remoteDevs {
 			requestRemoteDev := &RequestRemoteDev{
-				Name:         re.Name,
-				AdmInPatNo:   re.Name,
-				DevCode:      re.Name,
-				PacRoomDesc:  re.Name,
-				PacBedDesc:   re.Name,
-				CtHospitalId: re.Name,
-				DevStatus:    re.Name,
-				DevAction:    re.Name,
+				Name:        re.Name,
+				AdmInPatNo:  re.AdmInPatNo,
+				DevCode:     re.DevCode,
+				PacRoomDesc: re.PacRoomDesc,
+				PacBedDesc:  re.PacBedDesc,
+				DevStatus:   re.DevStatus,
+				DevAction:   re.DevAction,
 			}
 			requestRemoteDevs = append(requestRemoteDevs, requestRemoteDev)
 		}
@@ -91,7 +96,7 @@ func Sync() error {
 
 		requestRemoteDevsJson, _ := json.Marshal(&requestRemoteDevs)
 		var res interface{}
-		res, err = utils.SyncServices("platform/report/syncdevice", fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", "", requestRemoteDevsJson))
+		res, err = utils.SyncServices("api/v1/sync_remote", fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", "", requestRemoteDevsJson))
 		if err != nil {
 			logging.Err.Error(err)
 		}
@@ -128,14 +133,13 @@ func Sync() error {
 					ore.DevStatus != re.DevStatus ||
 					ore.DevAction != re.DevAction {
 					requestRemoteDev := &RequestRemoteDev{
-						Name:         re.Name,
-						AdmInPatNo:   re.Name,
-						DevCode:      re.Name,
-						PacRoomDesc:  re.Name,
-						PacBedDesc:   re.Name,
-						CtHospitalId: re.Name,
-						DevStatus:    re.Name,
-						DevAction:    re.Name,
+						Name:        re.Name,
+						AdmInPatNo:  re.AdmInPatNo,
+						DevCode:     re.DevCode,
+						PacRoomDesc: re.PacRoomDesc,
+						PacBedDesc:  re.PacBedDesc,
+						DevStatus:   re.DevStatus,
+						DevAction:   re.DevAction,
 					}
 					requestRemoteDevs = append(requestRemoteDevs, requestRemoteDev)
 					newRemoteDevs = append(newRemoteDevs, re)
@@ -147,14 +151,13 @@ func Sync() error {
 
 		if !in {
 			requestRemoteDev := &RequestRemoteDev{
-				Name:         re.Name,
-				AdmInPatNo:   re.Name,
-				DevCode:      re.Name,
-				PacRoomDesc:  re.Name,
-				PacBedDesc:   re.Name,
-				CtHospitalId: re.Name,
-				DevStatus:    re.Name,
-				DevAction:    re.Name,
+				Name:        re.Name,
+				AdmInPatNo:  re.AdmInPatNo,
+				DevCode:     re.DevCode,
+				PacRoomDesc: re.PacRoomDesc,
+				PacBedDesc:  re.PacBedDesc,
+				DevStatus:   re.DevStatus,
+				DevAction:   re.DevAction,
 			}
 			requestRemoteDevs = append(requestRemoteDevs, requestRemoteDev)
 			newRemoteDevs = append(newRemoteDevs, re)

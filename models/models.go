@@ -16,7 +16,7 @@ func init() {
 	file := utils.DBFile()
 	Sqlite, err = gorm.Open(sqlite.Open(file), &gorm.Config{})
 	if err != nil {
-		panic(fmt.Sprintf("database error:%+v", err))
+		panic(fmt.Sprintf("database sqlite error:%+v", err))
 	}
 
 	err = Sqlite.AutoMigrate(&RemoteDev{})
@@ -25,6 +25,9 @@ func init() {
 	}
 
 	Mysql, err = gorm.Open(my.Open(utils.Config.DB), &gorm.Config{})
+	if err != nil {
+		panic(fmt.Sprintf("database mysql init error:%+v", err))
+	}
 }
 
 func Close() {

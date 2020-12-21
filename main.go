@@ -169,7 +169,6 @@ func main() {
 	}
 
 	if *Action == "sync" {
-		utils.GetToken()
 		err := models.Sync()
 		if err != nil {
 			panic(err)

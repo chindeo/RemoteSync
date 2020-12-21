@@ -69,6 +69,37 @@ func GetToken() error {
 	}
 }
 
+type AppInfoRequest struct {
+	Code    int64    `json:"code"`
+	Message string   `json:"message"`
+	Data    *AppInfo `json:"data"`
+}
+
+func GetAppInfo() error {
+	appInfo := GetAppInfoCache()
+	if appInfo != nil {
+		return nil
+	}
+
+	var air AppInfoRequest
+	result := Request("GET", "/api/v1/application", "", false)
+	if len(result) == 0 {
+		return errors.New("请求没有返回数据")
+	}
+
+	err := json.Unmarshal(result, &air)
+	if err != nil {
+		return err
+	}
+
+	if air.Code == 200 {
+		SetAppInfoCache(air.Data)
+		return nil
+	} else {
+		return errors.New(air.Message)
+	}
+}
+
 func Request(method, url, data string, auth bool) []byte {
 	timeout := 3
 	timeover := 3

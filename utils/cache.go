@@ -22,3 +22,21 @@ func GetCacheToken() string {
 	}
 	return ""
 }
+
+type AppInfo struct {
+	CtHospitalId int64 `json:"ct_hospital_id"`
+}
+
+const APPINFPINDEX = "APPINFO"
+
+func SetAppInfoCache(appInfo *AppInfo) {
+	CC.Set(APPINFPINDEX, appInfo, cache.DefaultExpiration)
+}
+
+func GetAppInfoCache() *AppInfo {
+	foo, found := CC.Get(APPINFPINDEX)
+	if found {
+		return foo.(*AppInfo)
+	}
+	return nil
+}
