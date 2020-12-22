@@ -177,6 +177,14 @@ func main() {
 		return
 	}
 
+	if *Action == "cache_clear" {
+		utils.CC.Delete(fmt.Sprintf("XToken_%s", utils.Config.Appid))
+		utils.CC.Delete(fmt.Sprintf("APPINFO_%s", utils.Config.Appid))
+		utils.CC.DeleteExpired()
+		logging.Dbug.Info("清除缓存")
+		return
+	}
+
 	if *Action == "remove" {
 		err := s.Uninstall()
 		if err != nil {

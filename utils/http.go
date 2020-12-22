@@ -23,7 +23,7 @@ type Req struct {
 }
 
 type Token struct {
-	XToken string `json:"X-Token"`
+	AccessToken string `json:"AccessToken"`
 }
 
 func SyncServices(path, data string) (interface{}, error) {
@@ -49,7 +49,7 @@ func GetToken() error {
 	result := Request(
 		"POST",
 		"/api/v1/get_access_token",
-		fmt.Sprintf("appid=%s&appsecret=%s&apptype=%s", Config.Appid, Config.Appsecret, "hospital"),
+		fmt.Sprintf("app_id=%s&app_secret=%s", Config.Appid, Config.Appsecret),
 		false,
 	)
 	if len(result) == 0 {
@@ -62,10 +62,17 @@ func GetToken() error {
 	}
 
 	if re.Code == 200 {
-		SetCacheToken(re.Data.XToken)
+		if re.Data.AccessToken == "" {
+			return errors.New(fmt.Sprintf("get token return response %+v", re))
+		}
+		fmt.Println(fmt.Sprintf("get token return response %+v", re.Data))
+		SetCacheToken(re.Data.AccessToken)
+		if err := GetAppInfo(); err != nil {
+			return err
+		}
 		return nil
 	} else {
-		return errors.New(re.Message)
+		return errors.New(fmt.Sprintf("get token return response %+v", re))
 	}
 }
 
@@ -82,7 +89,7 @@ func GetAppInfo() error {
 	}
 
 	var air AppInfoRequest
-	result := Request("GET", "/api/v1/application", "", false)
+	result := Request("GET", "/api/v1/application", "", true)
 	if len(result) == 0 {
 		return errors.New("请求没有返回数据")
 	}
@@ -93,10 +100,14 @@ func GetAppInfo() error {
 	}
 
 	if air.Code == 200 {
+		if air.Data == nil {
+			return errors.New(fmt.Sprintf("get appinfo return response %+v", air))
+		}
+		fmt.Println(fmt.Sprintf("get appinfo return response %+v", air.Data))
 		SetAppInfoCache(air.Data)
 		return nil
 	} else {
-		return errors.New(air.Message)
+		return errors.New(fmt.Sprintf("get appinfo return response %+v", air))
 	}
 }
 
@@ -114,15 +125,25 @@ func Request(method, url, data string, auth bool) []byte {
 		}
 		req, _ := http.NewRequest(method, fullUrl, strings.NewReader(data))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+		req.Header.Set("AuthType", "4")
 		if auth {
 			req.Header.Set("X-Token", GetCacheToken())
+			phpSessionId := GetSessionId()
+			if phpSessionId != nil {
+				req.AddCookie(phpSessionId)
+			}
 		}
 		resp, err := Client.Do(req)
+		defer resp.Body.Close()
 		if err != nil {
 			fmt.Println(fmt.Sprintf("%s: %+v", url, err))
 			return
 		}
-		defer resp.Body.Close()
+
+		if !auth {
+			SetSessionId(resp.Cookies())
+		}
+
 		b, _ := ioutil.ReadAll(resp.Body)
 		result <- b
 	}()

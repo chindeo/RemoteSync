@@ -13,18 +13,18 @@ func init() {
 	Dbug = NewLogger(&Options{
 		Rolling:     DAILY,
 		TimesFormat: TIMESECOND,
-	}, filepath.Join(utils.LogDir(), "./logs/debug.log"))
+	}, filepath.Join(utils.LogDir(), "./debug.log"))
 	Dbug.SetLogPrefix("log_prefix")
 
 	Err = NewLogger(&Options{
 		Rolling:     DAILY,
 		TimesFormat: TIMESECOND,
-	}, filepath.Join(utils.LogDir(), "./logs/error.log"))
+	}, filepath.Join(utils.LogDir(), "./error.log"))
 	Err.SetLogPrefix("log_prefix")
 
 	Norm = NewLogger(&Options{
 		Rolling:     DAILY,
 		TimesFormat: TIMESECOND,
-	}, filepath.Join(utils.LogDir(), "./logs/info.log"))
+	}, filepath.Join(utils.LogDir(), "./info.log"))
 	Norm.SetLogPrefix("log_prefix")
 }

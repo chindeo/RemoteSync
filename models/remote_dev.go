@@ -10,51 +10,65 @@ import (
 )
 
 type RemoteDev struct {
-	ID           uint   `gorm:"primarykey"`
-	Name         string `json:"name"`           // 患者名称
-	AdmInPatNo   string `json:"adm_in_pat_no"`  // 患者住院号
-	DevCode      string `json:"dev_code"`       // 设备代码
-	DevType      int64  `json:"dev_type"`       // 设备类型 2 床旁
-	PacRoomDesc  string `json:"pac_room_desc"`  // 房号
-	PacBedDesc   string `json:"pac_bed_desc"`   // 床号
-	CtHospitalId string `json:"ct_hospital_id"` // 医院id
-	DevStatus    string `json:"dev_status"`     // 设备状态
-	DevAction    string `json:"dev_active"`     // 设备状态
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID             uint   `gorm:"primarykey"`
+	Name           string `json:"name"`             // 患者名称
+	AdmInPatNo     string `json:"adm_in_pat_no"`    // 患者住院号
+	DevCode        string `json:"dev_code"`         // 设备代码
+	DevType        int64  `json:"dev_type"`         // 设备类型 2 床旁
+	PacRoomDesc    string `json:"pac_room_desc"`    // 房号
+	PacBedDesc     string `json:"pac_bed_desc"`     // 床号
+	CtHospitalName string `json:"ct_hospital_name"` // 院区
+	LocName        string `json:"loc_name"`         // 科室
+	DevStatus      string `json:"dev_status"`       // 设备状态
+	DevAction      string `json:"dev_active"`       // 设备状态
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 type RequestRemoteDev struct {
-	Name        string `json:"name"`          // 患者名称
-	AdmInPatNo  string `json:"adm_in_pat_no"` // 患者住院号
-	DevCode     string `json:"dev_code"`      // 设备代码
-	PacRoomDesc string `json:"pac_room_desc"` // 房号
-	PacBedDesc  string `json:"pac_bed_desc"`  // 床号
-	DevStatus   string `json:"dev_status"`    // 设备状态
-	DevAction   string `json:"dev_active"`    // 设备状态
+	Name            string `json:"name"`             // 患者名称
+	AdmInPatNo      string `json:"adm_in_pat_no"`    // 患者住院号
+	DevCode         string `json:"dev_code"`         // 设备代码
+	PacRoomDesc     string `json:"pac_room_desc"`    // 房号
+	PacBedDesc      string `json:"pac_bed_desc"`     // 床号
+	DevStatus       string `json:"dev_status"`       // 设备状态
+	DevAction       string `json:"dev_active"`       // 设备状态
+	CtHospitalName  string `json:"ct_hospital_name"` // 院区
+	LocName         string `json:"loc_name"`         // 科室
+	ApplicationName string `json:"application_name"`
+	ApplicationId   int64  `json:"application_id"`
 }
 
 func Sync() error {
 	if err := utils.GetToken(); err != nil {
-		return err
-	}
-	if err := utils.GetAppInfo(); err != nil {
+		logging.Err.Error("get token error ", err)
 		return err
 	}
 
+	if utils.GetAppInfoCache() == nil {
+		return errors.New("app info is empty")
+	}
+
+	appId := utils.GetAppInfoCache().Id
+	appName := utils.GetAppInfoCache().Name
+
 	if Sqlite == nil {
+		logging.Err.Error("database is not init")
 		return errors.New("database is not init")
 	}
 
-	query := "select pa_patmas.pmi_name as name ,pa_adm.adm_in_pat_no,pa_adm.ct_hospital_id, pac_room.room_desc as pac_room_desc,pac_bed.bed_code as pac_bed_desc,dev_code ,dev_type,dev_active,dev_status  from cf_device "
+	query := "select ct_loc.loc_desc as loc_name, pa_patmas.pmi_name as name ,pa_adm.adm_in_pat_no,ct_hospital.hosp_desc as ct_hospital_name, pac_room.room_desc as pac_room_desc,pac_bed.bed_code as pac_bed_desc,dev_code ,dev_type,dev_active,dev_status  from cf_device "
 	query += " left join pa_adm on pa_adm.pac_bed_id = cf_device.pac_bed_id"
+	query += " left join ct_loc on ct_loc.loc_id = cf_device.ct_loc_id"
 	query += " left join pa_patmas on pa_patmas.pmi_id = pa_adm.pa_patmas_id"
-	query += " left join pac_room on pac_room.room_id = cf_device.pac_room_id"
+	query += " left join pac_room on pac_room.room_id = pa_adm.pac_room_id"
 	query += " left join pac_bed on pac_bed.bed_id = cf_device.pac_bed_id"
-	query += fmt.Sprintf(" where cf_device.dev_type = 2 and pa_adm.ct_hospital_id = %d", utils.GetAppInfoCache().CtHospitalId)
+	query += " left join ct_hospital on pa_adm.ct_hospital_id = ct_hospital.hosp_id"
+	query += fmt.Sprintf(" where cf_device.dev_type = 2")
 
 	rows, err := Mysql.Raw(query).Rows()
 	if err != nil {
+		logging.Err.Error("mysql raw error :", err)
 		return err
 	}
 	defer rows.Close()
@@ -78,17 +92,22 @@ func Sync() error {
 	var requestRemoteDevs []*RequestRemoteDev
 
 	// 没有旧数据
+	path := "common/v1/data_sync/remote"
 	if len(oldRemoteDevs) == 0 {
 		newRemoteDevs = remoteDevs
 		for _, re := range remoteDevs {
 			requestRemoteDev := &RequestRemoteDev{
-				Name:        re.Name,
-				AdmInPatNo:  re.AdmInPatNo,
-				DevCode:     re.DevCode,
-				PacRoomDesc: re.PacRoomDesc,
-				PacBedDesc:  re.PacBedDesc,
-				DevStatus:   re.DevStatus,
-				DevAction:   re.DevAction,
+				Name:            re.Name,
+				AdmInPatNo:      re.AdmInPatNo,
+				DevCode:         re.DevCode,
+				PacRoomDesc:     re.PacRoomDesc,
+				PacBedDesc:      re.PacBedDesc,
+				DevStatus:       re.DevStatus,
+				DevAction:       re.DevAction,
+				CtHospitalName:  re.CtHospitalName,
+				LocName:         re.LocName,
+				ApplicationId:   appId,
+				ApplicationName: appName,
 			}
 			requestRemoteDevs = append(requestRemoteDevs, requestRemoteDev)
 		}
@@ -96,12 +115,12 @@ func Sync() error {
 
 		requestRemoteDevsJson, _ := json.Marshal(&requestRemoteDevs)
 		var res interface{}
-		res, err = utils.SyncServices("api/v1/sync_remote", fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", "", requestRemoteDevsJson))
+		res, err = utils.SyncServices(path, fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", "", requestRemoteDevsJson))
 		if err != nil {
-			logging.Err.Error(err)
+			logging.Err.Error("post common/v1/sync_remote get error ", err)
 		}
 
-		logging.Norm.Infof("数据提交返回信息:%+v", res)
+		logging.Norm.Infof("数据提交返回信息:", res)
 
 		return nil
 
@@ -129,17 +148,21 @@ func Sync() error {
 					ore.AdmInPatNo != re.AdmInPatNo ||
 					ore.PacRoomDesc != re.PacRoomDesc ||
 					ore.PacBedDesc != re.PacBedDesc ||
-					ore.CtHospitalId != re.CtHospitalId ||
+					ore.CtHospitalName != re.CtHospitalName ||
 					ore.DevStatus != re.DevStatus ||
 					ore.DevAction != re.DevAction {
 					requestRemoteDev := &RequestRemoteDev{
-						Name:        re.Name,
-						AdmInPatNo:  re.AdmInPatNo,
-						DevCode:     re.DevCode,
-						PacRoomDesc: re.PacRoomDesc,
-						PacBedDesc:  re.PacBedDesc,
-						DevStatus:   re.DevStatus,
-						DevAction:   re.DevAction,
+						Name:            re.Name,
+						AdmInPatNo:      re.AdmInPatNo,
+						DevCode:         re.DevCode,
+						PacRoomDesc:     re.PacRoomDesc,
+						PacBedDesc:      re.PacBedDesc,
+						DevStatus:       re.DevStatus,
+						DevAction:       re.DevAction,
+						CtHospitalName:  re.CtHospitalName,
+						LocName:         re.LocName,
+						ApplicationId:   appId,
+						ApplicationName: appName,
 					}
 					requestRemoteDevs = append(requestRemoteDevs, requestRemoteDev)
 					newRemoteDevs = append(newRemoteDevs, re)
@@ -151,13 +174,17 @@ func Sync() error {
 
 		if !in {
 			requestRemoteDev := &RequestRemoteDev{
-				Name:        re.Name,
-				AdmInPatNo:  re.AdmInPatNo,
-				DevCode:     re.DevCode,
-				PacRoomDesc: re.PacRoomDesc,
-				PacBedDesc:  re.PacBedDesc,
-				DevStatus:   re.DevStatus,
-				DevAction:   re.DevAction,
+				Name:            re.Name,
+				AdmInPatNo:      re.AdmInPatNo,
+				DevCode:         re.DevCode,
+				PacRoomDesc:     re.PacRoomDesc,
+				PacBedDesc:      re.PacBedDesc,
+				DevStatus:       re.DevStatus,
+				DevAction:       re.DevAction,
+				CtHospitalName:  re.CtHospitalName,
+				LocName:         re.LocName,
+				ApplicationId:   appId,
+				ApplicationName: appName,
 			}
 			requestRemoteDevs = append(requestRemoteDevs, requestRemoteDev)
 			newRemoteDevs = append(newRemoteDevs, re)
@@ -179,12 +206,12 @@ func Sync() error {
 	}
 
 	var res interface{}
-	res, err = utils.SyncServices("platform/report/syncdevice", fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", string(delDevCodesJson), string(requestRemoteDevsJson)))
+	res, err = utils.SyncServices(path, fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", string(delDevCodesJson), string(requestRemoteDevsJson)))
 	if err != nil {
 		logging.Err.Error(err)
 	}
 
-	logging.Norm.Infof("数据提交返回信息:%+v", res)
+	logging.Norm.Infof("数据提交返回信息:", res)
 
 	return nil
 }
