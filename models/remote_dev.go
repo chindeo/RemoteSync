@@ -20,7 +20,7 @@ type RemoteDev struct {
 	CtHospitalName string `json:"ct_hospital_name"` // 院区
 	LocName        string `json:"loc_name"`         // 科室
 	DevStatus      string `json:"dev_status"`       // 设备状态
-	DevAction      string `json:"dev_active"`       // 设备状态
+	DevActive      string `json:"dev_active"`       // 设备状态
 	DevVideoStatus string `json:"dev_video_status"` // 探视状态
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
@@ -33,7 +33,7 @@ type RequestRemoteDev struct {
 	PacRoomDesc     string `json:"pac_room_desc"`    // 房号
 	PacBedDesc      string `json:"pac_bed_desc"`     // 床号
 	DevStatus       string `json:"dev_status"`       // 设备状态
-	DevAction       string `json:"dev_active"`       // 设备状态
+	DevActive       string `json:"dev_active"`       // 设备状态
 	DevVideoStatus  string `json:"dev_video_status"` // 探视状态
 	CtHospitalName  string `json:"ct_hospital_name"` // 院区
 	LocName         string `json:"loc_name"`         // 科室
@@ -51,7 +51,7 @@ func RemoteSync() error {
 		return errors.New("database is not init")
 	}
 
-	query := "select ct_loc.loc_desc as loc_name, pa_patmas.pmi_name as name ,pa_adm.adm_in_pat_no,ct_hospital.hosp_desc as ct_hospital_name, pac_room.room_desc as pac_room_desc,pac_bed.bed_code as pac_bed_desc,dev_code ,dev_type,dev_active,dev_status,dev_video_status  from cf_device "
+	query := "select ct_loc.loc_desc as loc_name, pa_patmas.pmi_name as name ,pa_adm.adm_in_pat_no,ct_hospital.hosp_desc as ct_hospital_name, pac_room.room_desc as pac_room_desc,pac_bed.bed_code as pac_bed_desc,dev_code,dev_type,dev_active,dev_status,dev_video_status  from cf_device "
 	query += " left join pa_adm on pa_adm.pac_bed_id = cf_device.pac_bed_id"
 	query += " left join ct_loc on ct_loc.loc_id = cf_device.ct_loc_id"
 	query += " left join pa_patmas on pa_patmas.pmi_id = pa_adm.pa_patmas_id"
@@ -97,7 +97,7 @@ func RemoteSync() error {
 				PacRoomDesc:     re.PacRoomDesc,
 				PacBedDesc:      re.PacBedDesc,
 				DevStatus:       re.DevStatus,
-				DevAction:       re.DevAction,
+				DevActive:       re.DevActive,
 				DevVideoStatus:  re.DevVideoStatus,
 				CtHospitalName:  re.CtHospitalName,
 				LocName:         re.LocName,
@@ -146,7 +146,7 @@ func RemoteSync() error {
 					ore.CtHospitalName != re.CtHospitalName ||
 					ore.DevVideoStatus != re.DevVideoStatus ||
 					ore.DevStatus != re.DevStatus ||
-					ore.DevAction != re.DevAction {
+					ore.DevActive != re.DevActive {
 					requestRemoteDev := &RequestRemoteDev{
 						Name:            re.Name,
 						AdmInPatNo:      re.AdmInPatNo,
@@ -154,7 +154,7 @@ func RemoteSync() error {
 						PacRoomDesc:     re.PacRoomDesc,
 						PacBedDesc:      re.PacBedDesc,
 						DevStatus:       re.DevStatus,
-						DevAction:       re.DevAction,
+						DevActive:       re.DevActive,
 						DevVideoStatus:  re.DevVideoStatus,
 						CtHospitalName:  re.CtHospitalName,
 						LocName:         re.LocName,
@@ -177,7 +177,7 @@ func RemoteSync() error {
 				PacRoomDesc:     re.PacRoomDesc,
 				PacBedDesc:      re.PacBedDesc,
 				DevStatus:       re.DevStatus,
-				DevAction:       re.DevAction,
+				DevActive:       re.DevActive,
 				DevVideoStatus:  re.DevVideoStatus,
 				CtHospitalName:  re.CtHospitalName,
 				LocName:         re.LocName,

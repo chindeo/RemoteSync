@@ -20,8 +20,11 @@
 .idea/
 logs/*
 
-LogSync
+RemoteSync
 
 air.log
 .air.conf
+
+config.yaml
+
 

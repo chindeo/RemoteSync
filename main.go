@@ -59,6 +59,12 @@ func sync() {
 			if err := models.RemoteSync(); err != nil {
 				fmt.Println(err)
 			}
+			if err := models.LocSync(); err != nil {
+				fmt.Println(err)
+			}
+			if err := models.UserTypeSync(); err != nil {
+				fmt.Println(err)
+			}
 
 		}
 		chSy <- 1
