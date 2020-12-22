@@ -1,17 +1,20 @@
-# LogSync
+# RemoteSync
 
 查询日志信息
 
 #### 注册/卸载服务/启动/停止/重启
 
 ```shell script
-
-LogSync.exe install 
-LogSync.exe remove 
-LogSync.exe start
-LogSync.exe stop
-LogSync.exe restart
-LogSync.exe version 查看版本号
+RemoteSync.exe --action=install 
+RemoteSync.exe --action=remove 
+RemoteSync.exe --action=start
+RemoteSync.exe --action=stop
+RemoteSync.exe --action=restart
+RemoteSync.exe --action=version 
+RemoteSync.exe --action=loc_sync  // 科室同步
+RemoteSync.exe --action=remote_sync  // 探视数据同步
+RemoteSync.exe --action=user_type_sync  // 职称同步
+RemoteSync.exe --action=cache_clear  // 清除 token 缓存
 
 ```
 

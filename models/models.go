@@ -19,7 +19,7 @@ func init() {
 		panic(fmt.Sprintf("database sqlite error:%+v", err))
 	}
 
-	err = Sqlite.AutoMigrate(&RemoteDev{})
+	err = Sqlite.AutoMigrate(&RemoteDev{}, &Loc{}, &UserType{})
 	if err != nil {
 		panic(fmt.Sprintf("database model init error:%+v", err))
 	}

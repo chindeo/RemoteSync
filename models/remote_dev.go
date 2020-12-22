@@ -21,6 +21,7 @@ type RemoteDev struct {
 	LocName        string `json:"loc_name"`         // 科室
 	DevStatus      string `json:"dev_status"`       // 设备状态
 	DevAction      string `json:"dev_active"`       // 设备状态
+	DevVideoStatus string `json:"dev_video_status"` // 探视状态
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }
@@ -33,21 +34,14 @@ type RequestRemoteDev struct {
 	PacBedDesc      string `json:"pac_bed_desc"`     // 床号
 	DevStatus       string `json:"dev_status"`       // 设备状态
 	DevAction       string `json:"dev_active"`       // 设备状态
+	DevVideoStatus  string `json:"dev_video_status"` // 探视状态
 	CtHospitalName  string `json:"ct_hospital_name"` // 院区
 	LocName         string `json:"loc_name"`         // 科室
 	ApplicationName string `json:"application_name"`
 	ApplicationId   int64  `json:"application_id"`
 }
 
-func Sync() error {
-	if err := utils.GetToken(); err != nil {
-		logging.Err.Error("get token error ", err)
-		return err
-	}
-
-	if utils.GetAppInfoCache() == nil {
-		return errors.New("app info is empty")
-	}
+func RemoteSync() error {
 
 	appId := utils.GetAppInfoCache().Id
 	appName := utils.GetAppInfoCache().Name
@@ -57,14 +51,14 @@ func Sync() error {
 		return errors.New("database is not init")
 	}
 
-	query := "select ct_loc.loc_desc as loc_name, pa_patmas.pmi_name as name ,pa_adm.adm_in_pat_no,ct_hospital.hosp_desc as ct_hospital_name, pac_room.room_desc as pac_room_desc,pac_bed.bed_code as pac_bed_desc,dev_code ,dev_type,dev_active,dev_status  from cf_device "
+	query := "select ct_loc.loc_desc as loc_name, pa_patmas.pmi_name as name ,pa_adm.adm_in_pat_no,ct_hospital.hosp_desc as ct_hospital_name, pac_room.room_desc as pac_room_desc,pac_bed.bed_code as pac_bed_desc,dev_code ,dev_type,dev_active,dev_status,dev_video_status  from cf_device "
 	query += " left join pa_adm on pa_adm.pac_bed_id = cf_device.pac_bed_id"
 	query += " left join ct_loc on ct_loc.loc_id = cf_device.ct_loc_id"
 	query += " left join pa_patmas on pa_patmas.pmi_id = pa_adm.pa_patmas_id"
 	query += " left join pac_room on pac_room.room_id = pa_adm.pac_room_id"
 	query += " left join pac_bed on pac_bed.bed_id = cf_device.pac_bed_id"
 	query += " left join ct_hospital on pa_adm.ct_hospital_id = ct_hospital.hosp_id"
-	query += fmt.Sprintf(" where cf_device.dev_type = 2")
+	query += fmt.Sprintf(" where cf_device.dev_type in (%s)", utils.Config.DevType)
 
 	rows, err := Mysql.Raw(query).Rows()
 	if err != nil {
@@ -104,6 +98,7 @@ func Sync() error {
 				PacBedDesc:      re.PacBedDesc,
 				DevStatus:       re.DevStatus,
 				DevAction:       re.DevAction,
+				DevVideoStatus:  re.DevVideoStatus,
 				CtHospitalName:  re.CtHospitalName,
 				LocName:         re.LocName,
 				ApplicationId:   appId,
@@ -149,6 +144,7 @@ func Sync() error {
 					ore.PacRoomDesc != re.PacRoomDesc ||
 					ore.PacBedDesc != re.PacBedDesc ||
 					ore.CtHospitalName != re.CtHospitalName ||
+					ore.DevVideoStatus != re.DevVideoStatus ||
 					ore.DevStatus != re.DevStatus ||
 					ore.DevAction != re.DevAction {
 					requestRemoteDev := &RequestRemoteDev{
@@ -159,6 +155,7 @@ func Sync() error {
 						PacBedDesc:      re.PacBedDesc,
 						DevStatus:       re.DevStatus,
 						DevAction:       re.DevAction,
+						DevVideoStatus:  re.DevVideoStatus,
 						CtHospitalName:  re.CtHospitalName,
 						LocName:         re.LocName,
 						ApplicationId:   appId,
@@ -181,6 +178,7 @@ func Sync() error {
 				PacBedDesc:      re.PacBedDesc,
 				DevStatus:       re.DevStatus,
 				DevAction:       re.DevAction,
+				DevVideoStatus:  re.DevVideoStatus,
 				CtHospitalName:  re.CtHospitalName,
 				LocName:         re.LocName,
 				ApplicationId:   appId,
@@ -195,13 +193,13 @@ func Sync() error {
 	var requestRemoteDevsJson []byte
 	if len(delDevCodes) > 0 {
 		Sqlite.Where("dev_code in ?", delDevCodes).Delete(&RemoteDev{})
-	} else {
 		delDevCodesJson, _ = json.Marshal(&delDevCodes)
 	}
 
 	if len(newRemoteDevs) > 0 {
 		Sqlite.Create(&newRemoteDevs)
-	} else {
+	}
+	if len(requestRemoteDevs) > 0 {
 		requestRemoteDevsJson, _ = json.Marshal(&requestRemoteDevs)
 	}
 

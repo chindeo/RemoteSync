@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/kardianos/service"
@@ -26,103 +27,47 @@ func (p *program) Start(s service.Service) error {
 }
 
 func (p *program) run() {
-	//err := models.Init()
-	//if err != nil {
-	//	panic(err)
-	//}
-	//err = routers.Init()
-	//if err != nil {
-	//	panic(err)
-	//}
-
-	//go syncDeviceLog()
-	//go syncDevice()
+	go sync()
 
 }
 
-//func syncDevice() {
-//	t := utils.Conf().Section("time").Key("sync_data_time").MustInt64(1)
-//	v := utils.Conf().Section("time").Key("sync_data").MustString("h")
-//	var chSy chan int
-//	var tickerSync *time.Ticker
-//	switch v {
-//	case "h":
-//		tickerSync = time.NewTicker(time.Hour * time.Duration(t))
-//	case "m":
-//		tickerSync = time.NewTicker(time.Minute * time.Duration(t))
-//	case "s":
-//		tickerSync = time.NewTicker(time.Second * time.Duration(t))
-//	default:
-//		tickerSync = time.NewTicker(time.Hour * time.Duration(t))
-//	}
-//	go func() {
-//		for range tickerSync.C {
-//			utils.GetToken()
-//			sync.SyncDevice()
-//		}
-//		chSy <- 1
-//	}()
-//	<-chSy
-//}
-//
-//func syncDeviceLog() {
-//	var ch chan int
-//	var t int64
-//	t = utils.Conf().Section("time").Key("sync_log_time").MustInt64(4)
-//	v := utils.Conf().Section("time").Key("sync_log").MustString("m")
-//	var ticker *time.Ticker
-//
-//	ticker = time.NewTicker(time.Hour * time.Duration(t))
-//	switch v {
-//	case "h":
-//		ticker = time.NewTicker(time.Hour * time.Duration(t))
-//	case "m":
-//		ticker = time.NewTicker(time.Minute * time.Duration(t))
-//	case "s":
-//		ticker = time.NewTicker(time.Second * time.Duration(t))
-//	default:
-//		ticker = time.NewTicker(time.Minute * time.Duration(t))
-//	}
-//	sync.NotFirst = false
-//	go func() {
-//		for range ticker.C {
-//			utils.GetToken()
-//			go func() {
-//				sync.CheckRestful()
-//			}()
-//			go func() {
-//				sync.CheckService()
-//			}()
-//			// 进入当天目录,跳过 23点45 当天凌晨 0点15 分钟，给设备创建目录的时间
-//			if !((time.Now().Hour() == 0 && time.Now().Minute() < 15) || (time.Now().Hour() == 23 && time.Now().Minute() > 45)) {
-//				go func() {
-//					sync.SyncDeviceLog()
-//				}()
-//			}
-//			sync.NotFirst = true
-//		}
-//		ch <- 1
-//	}()
-//	<-ch
-//}
+func sync() {
+	v := utils.Config.Timetype
+	t := utils.Config.Timeduration
+	var chSy chan int
+	var tickerSync *time.Ticker
+	switch v {
+	case "h":
+		tickerSync = time.NewTicker(time.Hour * time.Duration(t))
+	case "m":
+		tickerSync = time.NewTicker(time.Minute * time.Duration(t))
+	case "s":
+		tickerSync = time.NewTicker(time.Second * time.Duration(t))
+	default:
+		tickerSync = time.NewTicker(time.Hour * time.Duration(t))
+	}
+	go func() {
+		for range tickerSync.C {
+			if err := utils.GetToken(); err != nil {
+				fmt.Println(err)
+			}
 
-//func (p *program) StopHTTP() (err error) {
-//	if p.httpServer == nil {
-//		err = fmt.Errorf("HTTP Server Not Found")
-//		return
-//	}
-//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-//	defer cancel()
-//	if err = p.httpServer.Shutdown(ctx); err != nil {
-//		return
-//	}
-//	return
-//}
+			if utils.GetAppInfoCache() == nil {
+				fmt.Println("app info is empty")
+			}
+
+			if err := models.RemoteSync(); err != nil {
+				fmt.Println(err)
+			}
+
+		}
+		chSy <- 1
+	}()
+	<-chSy
+}
 
 func (p *program) Stop(s service.Service) error {
 	defer log.Println("********** STOP **********")
-	//defer utils.CloseLogWriter()
-	//_ = p.StopHTTP()
 	//models.Close()
 	return nil
 }
@@ -168,12 +113,57 @@ func main() {
 		return
 	}
 
-	if *Action == "sync" {
-		err := models.Sync()
+	if *Action == "remote_sync" {
+		if err := utils.GetToken(); err != nil {
+			panic(err)
+		}
+
+		if utils.GetAppInfoCache() == nil {
+			panic("app info is empty")
+		}
+
+		err := models.RemoteSync()
 		if err != nil {
 			panic(err)
 		}
-		logging.Dbug.Info("同步数据")
+		logging.Dbug.Info("探视数据同步")
+
+		return
+	}
+
+	if *Action == "loc_sync" {
+		if err := utils.GetToken(); err != nil {
+			panic(err)
+		}
+
+		if utils.GetAppInfoCache() == nil {
+			panic("app info is empty")
+		}
+
+		err := models.LocSync()
+		if err != nil {
+			panic(err)
+		}
+		logging.Dbug.Info("科室数据同步")
+
+		return
+	}
+
+	if *Action == "user_type_sync" {
+		if err := utils.GetToken(); err != nil {
+			panic(err)
+		}
+
+		if utils.GetAppInfoCache() == nil {
+			panic("app info is empty")
+		}
+
+		err := models.UserTypeSync()
+		if err != nil {
+			panic(err)
+		}
+		logging.Dbug.Info("职称数据同步")
+
 		return
 	}
 

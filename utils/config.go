@@ -6,10 +6,13 @@ import (
 )
 
 var Config = struct {
-	Host      string `default:"" env:"host"`
-	Appid     string `default:"" env:"appid"`
-	Appsecret string `default:"" env:"appsecret"`
-	DB        string `default:"" env:"db"`
+	Host         string `default:"" env:"host"`
+	Appid        string `default:"" env:"appid"`
+	Appsecret    string `default:"" env:"appsecret"`
+	DB           string `default:"" env:"db"`
+	Timetype     string `default:"" env:"timetype"`
+	Timeduration int64  `default:"" env:"timeduration"`
+	DevType      string `default:"2" env:"devtype"`
 }{}
 
 func init() {

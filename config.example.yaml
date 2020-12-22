@@ -1,5 +1,7 @@
 host: 127.0.0.1:80 # 地址
 appid: 7965b1ca8b4d210fea04c9bb2b125b # 接口id
 appsecret: 3ff8f4fad94338179043aa031d0a4b2fa84e77535c90a101d74622aef91f58e2 #接口密钥
-
 db: visible:Chindeo@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local # mysql
+timetype: # h,m,s 同步频率类型
+timeduration: 3 #同步频率
+devtype: 2 #设备类型
