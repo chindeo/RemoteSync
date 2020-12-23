@@ -119,8 +119,8 @@ func Request(method, url, data string, auth bool) []byte {
 	t := time.Duration(timeout) * time.Second
 	Client := http.Client{Timeout: t}
 	go func() {
-		fullUrl := fmt.Sprintf("http://%s/%s", Config.Host, url)
-		if strings.Contains(url, "http") {
+		fullUrl := fmt.Sprintf("%s/%s", Config.Host, url)
+		if strings.Contains(url, "http") || strings.Contains(url, "https") {
 			fullUrl = url
 		}
 		req, _ := http.NewRequest(method, fullUrl, strings.NewReader(data))
