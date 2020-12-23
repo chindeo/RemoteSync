@@ -14,6 +14,7 @@ type RemoteDev struct {
 	Name           string `json:"name"`             // 患者名称
 	AdmInPatNo     string `json:"adm_in_pat_no"`    // 患者住院号
 	DevCode        string `json:"dev_code"`         // 设备代码
+	DevDesc        string `json:"dev_desc"`         // 设备名称
 	DevType        int64  `json:"dev_type"`         // 设备类型 2 床旁
 	PacRoomDesc    string `json:"pac_room_desc"`    // 房号
 	PacBedDesc     string `json:"pac_bed_desc"`     // 床号
@@ -27,9 +28,10 @@ type RemoteDev struct {
 }
 
 type RequestRemoteDev struct {
-	Name            string `json:"name"`             // 患者名称
-	AdmInPatNo      string `json:"adm_in_pat_no"`    // 患者住院号
-	DevCode         string `json:"dev_code"`         // 设备代码
+	Name            string `json:"name"`          // 患者名称
+	AdmInPatNo      string `json:"adm_in_pat_no"` // 患者住院号
+	DevCode         string `json:"dev_code"`      // 设备代码
+	DevDesc         string `json:"dev_desc"`
 	PacRoomDesc     string `json:"pac_room_desc"`    // 房号
 	PacBedDesc      string `json:"pac_bed_desc"`     // 床号
 	DevStatus       string `json:"dev_status"`       // 设备状态
@@ -51,7 +53,7 @@ func RemoteSync() error {
 		return errors.New("database is not init")
 	}
 
-	query := "select ct_loc.loc_desc as loc_name, pa_patmas.pmi_name as name ,pa_adm.adm_in_pat_no,ct_hospital.hosp_desc as ct_hospital_name, pac_room.room_desc as pac_room_desc,pac_bed.bed_code as pac_bed_desc,dev_code,dev_type,dev_active,dev_status,dev_video_status  from cf_device "
+	query := "select ct_loc.loc_desc as loc_name, pa_patmas.pmi_name as name ,pa_adm.adm_in_pat_no,ct_hospital.hosp_desc as ct_hospital_name, pac_room.room_desc as pac_room_desc,pac_bed.bed_code as pac_bed_desc,dev_code,dev_desc,dev_type,dev_active,dev_status,dev_video_status  from cf_device "
 	query += " left join pa_adm on pa_adm.pac_bed_id = cf_device.pac_bed_id"
 	query += " left join ct_loc on ct_loc.loc_id = cf_device.ct_loc_id"
 	query += " left join pa_patmas on pa_patmas.pmi_id = pa_adm.pa_patmas_id"
@@ -94,6 +96,7 @@ func RemoteSync() error {
 				Name:            re.Name,
 				AdmInPatNo:      re.AdmInPatNo,
 				DevCode:         re.DevCode,
+				DevDesc:         re.DevDesc,
 				PacRoomDesc:     re.PacRoomDesc,
 				PacBedDesc:      re.PacBedDesc,
 				DevStatus:       re.DevStatus,
@@ -109,8 +112,6 @@ func RemoteSync() error {
 		Sqlite.Create(&newRemoteDevs)
 
 		requestRemoteDevsJson, _ := json.Marshal(&requestRemoteDevs)
-		//requestRemoteDevsByte, _ := utils.Compress(requestRemoteDevsJson)
-		//requestRemoteDevsJson = requestRemoteDevsByte.Bytes()
 
 		var res interface{}
 		postdata := fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", "", string(requestRemoteDevsJson))
@@ -146,6 +147,7 @@ func RemoteSync() error {
 			if ore.DevCode == re.DevCode {
 				if ore.Name != re.Name ||
 					ore.AdmInPatNo != re.AdmInPatNo ||
+					ore.DevDesc != re.DevDesc ||
 					ore.PacRoomDesc != re.PacRoomDesc ||
 					ore.PacBedDesc != re.PacBedDesc ||
 					ore.CtHospitalName != re.CtHospitalName ||
@@ -156,6 +158,7 @@ func RemoteSync() error {
 						Name:            re.Name,
 						AdmInPatNo:      re.AdmInPatNo,
 						DevCode:         re.DevCode,
+						DevDesc:         re.DevDesc,
 						PacRoomDesc:     re.PacRoomDesc,
 						PacBedDesc:      re.PacBedDesc,
 						DevStatus:       re.DevStatus,
@@ -179,6 +182,7 @@ func RemoteSync() error {
 				Name:            re.Name,
 				AdmInPatNo:      re.AdmInPatNo,
 				DevCode:         re.DevCode,
+				DevDesc:         re.DevDesc,
 				PacRoomDesc:     re.PacRoomDesc,
 				PacBedDesc:      re.PacBedDesc,
 				DevStatus:       re.DevStatus,
@@ -199,8 +203,6 @@ func RemoteSync() error {
 	if len(delDevCodes) > 0 {
 		Sqlite.Where("dev_code in ?", delDevCodes).Delete(&RemoteDev{})
 		delDevCodesJson, _ = json.Marshal(&delDevCodes)
-		//delDevCodesByte, _ := utils.Compress(delDevCodesJson)
-		//delDevCodesJson = delDevCodesByte.Bytes()
 	}
 
 	if len(newRemoteDevs) > 0 {
@@ -208,11 +210,7 @@ func RemoteSync() error {
 	}
 	if len(requestRemoteDevs) > 0 {
 		requestRemoteDevsJson, _ = json.Marshal(&requestRemoteDevs)
-		//requestRemoteDevsByte, _ := utils.Compress(requestRemoteDevsJson)
-		//requestRemoteDevsJson = requestRemoteDevsByte.Bytes()
 	}
-
-	//utils.UnCompress(requestRemoteDevsJson)
 
 	postdata := fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", string(delDevCodesJson), string(requestRemoteDevsJson))
 	logging.Dbug.Infof("data len %d", len(postdata))

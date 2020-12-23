@@ -39,9 +39,8 @@ func SyncServices(path, data string) (interface{}, error) {
 
 	if re.Code == 401 {
 		CC.Delete(fmt.Sprintf("XToken_%s", Config.Appid))
-		CC.Delete(fmt.Sprintf("APPINFO_%s", Config.Appid))
 		CC.DeleteExpired()
-		return nil, nil
+		return re, nil
 	}
 
 	return re, nil
@@ -73,7 +72,6 @@ func GetToken() error {
 		if re.Data.AccessToken == "" {
 			return errors.New(fmt.Sprintf("get token return response %+v", re))
 		}
-		fmt.Println(fmt.Sprintf("get token return response %+v", re.Data))
 		SetCacheToken(re.Data.AccessToken)
 		if err := GetAppInfo(); err != nil {
 			return err
@@ -116,9 +114,7 @@ func GetAppInfo() error {
 		return nil
 	} else if air.Code == 401 {
 		CC.Delete(fmt.Sprintf("XToken_%s", Config.Appid))
-		CC.Delete(fmt.Sprintf("APPINFO_%s", Config.Appid))
 		CC.DeleteExpired()
-		GetToken()
 		return nil
 	} else {
 		return errors.New(fmt.Sprintf("get appinfo return response %+v", air))

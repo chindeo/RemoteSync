@@ -89,8 +89,6 @@ func UserTypeSync() error {
 		Sqlite.Create(&newUserTypes)
 
 		requestUserTypesJson, _ := json.Marshal(&requestUserTypes)
-		//requestUserTypesByte, _ := utils.Compress(requestUserTypesJson)
-		//requestUserTypesJson = requestUserTypesByte.Bytes()
 		var res interface{}
 		res, err = utils.SyncServices(path, fmt.Sprintf("delUserTypeIds=%s&requestUserTypes=%s", "", string(requestUserTypesJson)))
 		if err != nil {
@@ -165,8 +163,6 @@ func UserTypeSync() error {
 	if len(delUserTypeIds) > 0 {
 		Sqlite.Where("dev_code in ?", delUserTypeIds).Delete(&UserType{})
 		delUserTypeIdsJson, _ = json.Marshal(&delUserTypeIds)
-		//delUserTypeIdsByte, _ := utils.Compress(delUserTypeIdsJson)
-		//delUserTypeIdsJson = delUserTypeIdsByte.Bytes()
 	}
 
 	if len(newUserTypes) > 0 {
@@ -174,8 +170,6 @@ func UserTypeSync() error {
 	}
 	if len(requestUserTypes) > 0 {
 		requestUserTypesJson, _ = json.Marshal(&requestUserTypes)
-		//requestUserTypesByte, _ := utils.Compress(requestUserTypesJson)
-		//requestUserTypesJson = requestUserTypesByte.Bytes()
 	}
 
 	var res interface{}

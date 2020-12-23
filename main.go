@@ -28,7 +28,6 @@ func (p *program) Start(s service.Service) error {
 
 func (p *program) run() {
 	go sync()
-
 }
 
 func sync() {
