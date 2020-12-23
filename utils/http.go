@@ -41,7 +41,7 @@ func SyncServices(path, data string) (interface{}, error) {
 		CC.Delete(fmt.Sprintf("XToken_%s", Config.Appid))
 		CC.Delete(fmt.Sprintf("APPINFO_%s", Config.Appid))
 		CC.DeleteExpired()
-		return nil, errors.New(fmt.Sprintf("get appinfo return response %+v", re))
+		return nil, nil
 	}
 
 	return re, nil
@@ -119,7 +119,7 @@ func GetAppInfo() error {
 		CC.Delete(fmt.Sprintf("APPINFO_%s", Config.Appid))
 		CC.DeleteExpired()
 		GetToken()
-		errors.New(fmt.Sprintf("get appinfo return response %+v", air))
+		return nil
 	} else {
 		return errors.New(fmt.Sprintf("get appinfo return response %+v", air))
 	}

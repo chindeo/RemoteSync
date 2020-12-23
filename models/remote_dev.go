@@ -58,7 +58,7 @@ func RemoteSync() error {
 	query += " left join pac_room on pac_room.room_id = pa_adm.pac_room_id"
 	query += " left join pac_bed on pac_bed.bed_id = cf_device.pac_bed_id"
 	query += " left join ct_hospital on pa_adm.ct_hospital_id = ct_hospital.hosp_id"
-	query += fmt.Sprintf(" where cf_device.dev_type = %s and dev_active = 1 and dev_status = 1 and dev_video_status = 1", utils.Config.DevType)
+	query += fmt.Sprintf(" where cf_device.dev_type = %s and dev_active = 1 and dev_status = 1", utils.Config.DevType)
 
 	rows, err := Mysql.Raw(query).Rows()
 	if err != nil {
