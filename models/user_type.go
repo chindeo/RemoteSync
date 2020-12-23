@@ -42,7 +42,7 @@ func UserTypeSync() error {
 		return errors.New("database is not init")
 	}
 
-	query := "select utp_id,utp_code,utp_desc,utp_type,utp_active,utp_contrast from ct_user_type where utp_active = 1"
+	query := "select utp_id,utp_code,utp_desc,utp_type,utp_active,utp_contrast from ct_user_type where utp_active = '1'"
 
 	rows, err := Mysql.Raw(query).Rows()
 	if err != nil {
