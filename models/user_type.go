@@ -33,7 +33,6 @@ type RequestUserType struct {
 }
 
 func UserTypeSync() error {
-
 	appId := utils.GetAppInfoCache().Id
 	appName := utils.GetAppInfoCache().Name
 

@@ -44,7 +44,6 @@ type RequestRemoteDev struct {
 }
 
 func RemoteSync() error {
-
 	appId := utils.GetAppInfoCache().Id
 	appName := utils.GetAppInfoCache().Name
 

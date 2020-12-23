@@ -48,23 +48,16 @@ func sync() {
 	go func() {
 		for range tickerSync.C {
 			if err := utils.GetToken(); err != nil {
-				fmt.Println(err)
+				logging.Err.Error("get token err ", err)
 			}
-
 			if utils.GetAppInfoCache() == nil {
-				fmt.Println("app info is empty")
+				logging.Err.Error("app info is empty")
 			}
-
-			if err := models.RemoteSync(); err != nil {
-				fmt.Println(err)
-			}
-			if err := models.LocSync(); err != nil {
-				fmt.Println(err)
-			}
-			if err := models.UserTypeSync(); err != nil {
-				fmt.Println(err)
-			}
-
+			go models.RemoteSync()
+			go models.LocSync()
+			go models.UserTypeSync()
+			utils.CC.Delete(fmt.Sprintf("XToken_%s", utils.Config.Appid))
+			utils.CC.Delete(fmt.Sprintf("APPINFO_%s", utils.Config.Appid))
 		}
 		chSy <- 1
 	}()
@@ -112,11 +105,11 @@ func main() {
 	if *Action == "install" {
 		err := s.Install()
 		if err != nil {
-			panic(err)
+			logging.Err.Error("服务安装错误：", err)
 		}
 		err = s.Start()
 		if err != nil {
-			panic(err)
+			logging.Err.Error("服务启动错误", err)
 		}
 		logging.Dbug.Info("服务安装并启动")
 		return
@@ -124,16 +117,14 @@ func main() {
 
 	if *Action == "remote_sync" {
 		if err := utils.GetToken(); err != nil {
-			panic(err)
+			logging.Err.Error("get token err ", err)
 		}
-
 		if utils.GetAppInfoCache() == nil {
-			panic("app info is empty")
+			logging.Err.Error("app info is empty")
 		}
-
 		err := models.RemoteSync()
 		if err != nil {
-			panic(err)
+			logging.Err.Error("探视同步错误", err)
 		}
 		logging.Dbug.Info("探视数据同步")
 
@@ -142,16 +133,14 @@ func main() {
 
 	if *Action == "loc_sync" {
 		if err := utils.GetToken(); err != nil {
-			panic(err)
+			logging.Err.Error("get token err ", err)
 		}
-
 		if utils.GetAppInfoCache() == nil {
-			panic("app info is empty")
+			logging.Err.Error("app info is empty")
 		}
-
 		err := models.LocSync()
 		if err != nil {
-			panic(err)
+			logging.Err.Error("服务科室同步错误", err)
 		}
 		logging.Dbug.Info("科室数据同步")
 
@@ -160,16 +149,14 @@ func main() {
 
 	if *Action == "user_type_sync" {
 		if err := utils.GetToken(); err != nil {
-			panic(err)
+			logging.Err.Error("get token err ", err)
 		}
-
 		if utils.GetAppInfoCache() == nil {
-			panic("app info is empty")
+			logging.Err.Error("app info is empty")
 		}
-
 		err := models.UserTypeSync()
 		if err != nil {
-			panic(err)
+			logging.Err.Error("职称同步错误：", err)
 		}
 		logging.Dbug.Info("职称数据同步")
 
@@ -185,18 +172,17 @@ func main() {
 	}
 
 	if *Action == "remove" {
-
 		status, _ := s.Status()
 		if status == service.StatusRunning {
 			err := s.Stop()
 			if err != nil {
-				panic(err)
+				logging.Err.Error("服务停止错误：", err)
 			}
 		}
 
 		err = s.Uninstall()
 		if err != nil {
-			panic(err)
+			logging.Err.Error("服务卸载错误：", err)
 		}
 		logging.Dbug.Info("服务卸载成功")
 		return
@@ -205,7 +191,7 @@ func main() {
 	if *Action == "start" {
 		err := s.Start()
 		if err != nil {
-			panic(err)
+			logging.Err.Error("服务启动错误：", err)
 		}
 		logging.Dbug.Info("服务启动成功")
 		return
@@ -214,7 +200,7 @@ func main() {
 	if *Action == "stop" {
 		err := s.Stop()
 		if err != nil {
-			panic(err)
+			logging.Err.Error("服务停止错误：", err)
 		}
 		logging.Dbug.Info("服务停止成功")
 		return
@@ -223,7 +209,7 @@ func main() {
 	if *Action == "restart" {
 		err := s.Restart()
 		if err != nil {
-			panic(err)
+			logging.Err.Error("服务重启错误：", err)
 		}
 
 		logging.Dbug.Info("服务重启成功")
