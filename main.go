@@ -85,8 +85,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "usage: %s [options] [command]\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "Commands:\n")
 		fmt.Fprintf(os.Stderr, "\n")
-		fmt.Fprintf(os.Stderr, "  -action <install remove start stop restart version>\n")
-		fmt.Fprintf(os.Stderr, "    程序操作指令\n")
+		fmt.Fprintf(os.Stderr, "  -action= <install remove start stop restart version remote_sync loc_sync user_type_sync cache_clear>\n")
+		fmt.Fprintf(os.Stderr, "    程序操作指令 \n")
 		fmt.Fprintf(os.Stderr, "\n")
 	}
 

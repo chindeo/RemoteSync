@@ -21,10 +21,10 @@ RemoteSync.exe --action=cache_clear  // 清除 token 缓存
 #### 编译
 
 ```shell script
-go build -ldflags "-w -s -X main.Version=v1.9  -o ./cmd/RemoteSync.exe"
+go build -ldflags "-w -s -X main.Version=v1.0" -o ./cmd/RemoteSync.exe
 ```
 
 #### 版本更新
 
-- v1.1 增加 pscp 输入参数 y,重启程序后不检查超时15分钟
+- v1.0 完成本基础功能
 
