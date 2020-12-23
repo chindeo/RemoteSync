@@ -115,7 +115,11 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		logging.Dbug.Info("服务安装成功")
+		err = s.Start()
+		if err != nil {
+			panic(err)
+		}
+		logging.Dbug.Info("服务安装并启动")
 		return
 	}
 
@@ -182,7 +186,11 @@ func main() {
 	}
 
 	if *Action == "remove" {
-		err := s.Uninstall()
+		err := s.Stop()
+		if err != nil {
+			panic(err)
+		}
+		err = s.Uninstall()
 		if err != nil {
 			panic(err)
 		}
