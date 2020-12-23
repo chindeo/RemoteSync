@@ -42,7 +42,7 @@ func UserTypeSync() error {
 		return errors.New("database is not init")
 	}
 
-	query := "select ct_loc.loc_desc as loc_name, pa_patmas.pmi_name as name ,pa_adm.adm_in_pat_no,ct_hospital.hosp_desc as ct_hospital_name, pac_room.room_desc as pac_room_desc,pac_bed.bed_code as pac_bed_desc,dev_code ,dev_type,dev_active,dev_status  from cf_device "
+	query := "select utp_id,utp_code,utp_desc,utp_type,utp_active,utp_contrast from ct_user_type where utp_active = 1"
 
 	rows, err := Mysql.Raw(query).Rows()
 	if err != nil {
@@ -89,8 +89,10 @@ func UserTypeSync() error {
 		Sqlite.Create(&newUserTypes)
 
 		requestUserTypesJson, _ := json.Marshal(&requestUserTypes)
+		//requestUserTypesByte, _ := utils.Compress(requestUserTypesJson)
+		//requestUserTypesJson = requestUserTypesByte.Bytes()
 		var res interface{}
-		res, err = utils.SyncServices(path, fmt.Sprintf("delUserTypeIds=%s&requestUserTypes=%s", "", requestUserTypesJson))
+		res, err = utils.SyncServices(path, fmt.Sprintf("delUserTypeIds=%s&requestUserTypes=%s", "", string(requestUserTypesJson)))
 		if err != nil {
 			logging.Err.Error("post common/v1/sync_remote get error ", err)
 		}
@@ -162,14 +164,18 @@ func UserTypeSync() error {
 	var requestUserTypesJson []byte
 	if len(delUserTypeIds) > 0 {
 		Sqlite.Where("dev_code in ?", delUserTypeIds).Delete(&UserType{})
-	} else {
 		delUserTypeIdsJson, _ = json.Marshal(&delUserTypeIds)
+		//delUserTypeIdsByte, _ := utils.Compress(delUserTypeIdsJson)
+		//delUserTypeIdsJson = delUserTypeIdsByte.Bytes()
 	}
 
 	if len(newUserTypes) > 0 {
 		Sqlite.Create(&newUserTypes)
-	} else {
+	}
+	if len(requestUserTypes) > 0 {
 		requestUserTypesJson, _ = json.Marshal(&requestUserTypes)
+		//requestUserTypesByte, _ := utils.Compress(requestUserTypesJson)
+		//requestUserTypesJson = requestUserTypesByte.Bytes()
 	}
 
 	var res interface{}

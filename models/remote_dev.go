@@ -58,7 +58,7 @@ func RemoteSync() error {
 	query += " left join pac_room on pac_room.room_id = pa_adm.pac_room_id"
 	query += " left join pac_bed on pac_bed.bed_id = cf_device.pac_bed_id"
 	query += " left join ct_hospital on pa_adm.ct_hospital_id = ct_hospital.hosp_id"
-	query += fmt.Sprintf(" where cf_device.dev_type in (%s)", utils.Config.DevType)
+	query += fmt.Sprintf(" where cf_device.dev_type = %s and dev_active = 1 and dev_status = 1 and dev_video_status = 1", utils.Config.DevType)
 
 	rows, err := Mysql.Raw(query).Rows()
 	if err != nil {
@@ -109,8 +109,13 @@ func RemoteSync() error {
 		Sqlite.Create(&newRemoteDevs)
 
 		requestRemoteDevsJson, _ := json.Marshal(&requestRemoteDevs)
+		//requestRemoteDevsByte, _ := utils.Compress(requestRemoteDevsJson)
+		//requestRemoteDevsJson = requestRemoteDevsByte.Bytes()
+
 		var res interface{}
-		res, err = utils.SyncServices(path, fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", "", requestRemoteDevsJson))
+		postdata := fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", "", string(requestRemoteDevsJson))
+		logging.Dbug.Infof("data len %d", len(postdata))
+		res, err = utils.SyncServices(path, postdata)
 		if err != nil {
 			logging.Err.Error("post common/v1/sync_remote get error ", err)
 		}
@@ -194,6 +199,8 @@ func RemoteSync() error {
 	if len(delDevCodes) > 0 {
 		Sqlite.Where("dev_code in ?", delDevCodes).Delete(&RemoteDev{})
 		delDevCodesJson, _ = json.Marshal(&delDevCodes)
+		//delDevCodesByte, _ := utils.Compress(delDevCodesJson)
+		//delDevCodesJson = delDevCodesByte.Bytes()
 	}
 
 	if len(newRemoteDevs) > 0 {
@@ -201,10 +208,16 @@ func RemoteSync() error {
 	}
 	if len(requestRemoteDevs) > 0 {
 		requestRemoteDevsJson, _ = json.Marshal(&requestRemoteDevs)
+		//requestRemoteDevsByte, _ := utils.Compress(requestRemoteDevsJson)
+		//requestRemoteDevsJson = requestRemoteDevsByte.Bytes()
 	}
 
+	//utils.UnCompress(requestRemoteDevsJson)
+
+	postdata := fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", string(delDevCodesJson), string(requestRemoteDevsJson))
+	logging.Dbug.Infof("data len %d", len(postdata))
 	var res interface{}
-	res, err = utils.SyncServices(path, fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", string(delDevCodesJson), string(requestRemoteDevsJson)))
+	res, err = utils.SyncServices(path, postdata)
 	if err != nil {
 		logging.Err.Error(err)
 	}

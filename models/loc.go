@@ -83,8 +83,10 @@ func LocSync() error {
 		Sqlite.Create(&newLocs)
 
 		requestLocsJson, _ := json.Marshal(&requestLocs)
+		//requestLocsByte, _ := utils.Compress(requestLocsJson)
+		//requestLocsJson = requestLocsByte.Bytes()
 		var res interface{}
-		res, err = utils.SyncServices(path, fmt.Sprintf("delLocIds=%s&requestLocs=%s", "", requestLocsJson))
+		res, err = utils.SyncServices(path, fmt.Sprintf("delLocIds=%s&requestLocs=%s", "", string(requestLocsJson)))
 		if err != nil {
 			logging.Err.Error("post common/v1/sync_remote get error ", err)
 		}
@@ -151,6 +153,8 @@ func LocSync() error {
 	if len(delLocIds) > 0 {
 		Sqlite.Where("loc_id in ?", delLocIds).Delete(&Loc{})
 		delLocIdsJson, _ = json.Marshal(&delLocIds)
+		//delLocIdsByte, _ := utils.Compress(delLocIdsJson)
+		//delLocIdsJson = delLocIdsByte.Bytes()
 	}
 
 	if len(newLocs) > 0 {
@@ -159,6 +163,8 @@ func LocSync() error {
 
 	if len(requestLocs) > 0 {
 		requestLocsJson, _ = json.Marshal(&requestLocs)
+		//requestLocsByte, _ := utils.Compress(requestLocsJson)
+		//requestLocsJson = requestLocsByte.Bytes()
 	}
 
 	var res interface{}

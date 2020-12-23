@@ -36,6 +36,14 @@ func SyncServices(path, data string) (interface{}, error) {
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("SyncServices dopost: %s json.Unmarshal error：%v ,with result: %v", path, err, string(result)))
 	}
+
+	if re.Code == 401 {
+		CC.Delete(fmt.Sprintf("XToken_%s", Config.Appid))
+		CC.Delete(fmt.Sprintf("APPINFO_%s", Config.Appid))
+		CC.DeleteExpired()
+		return nil, errors.New(fmt.Sprintf("get appinfo return response %+v", re))
+	}
+
 	return re, nil
 }
 
@@ -106,9 +114,16 @@ func GetAppInfo() error {
 		fmt.Println(fmt.Sprintf("get appinfo return response %+v", air.Data))
 		SetAppInfoCache(air.Data)
 		return nil
+	} else if air.Code == 401 {
+		CC.Delete(fmt.Sprintf("XToken_%s", Config.Appid))
+		CC.Delete(fmt.Sprintf("APPINFO_%s", Config.Appid))
+		CC.DeleteExpired()
+		GetToken()
+		errors.New(fmt.Sprintf("get appinfo return response %+v", air))
 	} else {
 		return errors.New(fmt.Sprintf("get appinfo return response %+v", air))
 	}
+	return nil
 }
 
 func Request(method, url, data string, auth bool) []byte {

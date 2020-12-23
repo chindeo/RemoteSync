@@ -186,10 +186,15 @@ func main() {
 	}
 
 	if *Action == "remove" {
-		err := s.Stop()
-		if err != nil {
-			panic(err)
+
+		status, _ := s.Status()
+		if status == service.StatusRunning {
+			err := s.Stop()
+			if err != nil {
+				panic(err)
+			}
 		}
+
 		err = s.Uninstall()
 		if err != nil {
 			panic(err)
