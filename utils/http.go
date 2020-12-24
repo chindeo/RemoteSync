@@ -89,8 +89,7 @@ type AppInfoRequest struct {
 }
 
 func GetAppInfo() error {
-	appInfo := GetAppInfoCache()
-	if appInfo != nil {
+	if ai != nil {
 		return nil
 	}
 
@@ -119,7 +118,6 @@ func GetAppInfo() error {
 	} else {
 		return errors.New(fmt.Sprintf("get appinfo return response %+v", air))
 	}
-	return nil
 }
 
 func Request(method, url, data string, auth bool) []byte {

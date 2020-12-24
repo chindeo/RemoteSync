@@ -33,8 +33,8 @@ type RequestUserType struct {
 }
 
 func UserTypeSync() error {
-	appId := utils.GetAppInfoCache().Id
-	appName := utils.GetAppInfoCache().Name
+	appId := utils.GetAppID()
+	appName := utils.GetAppName()
 
 	if Sqlite == nil {
 		logging.Err.Error("database is not init")

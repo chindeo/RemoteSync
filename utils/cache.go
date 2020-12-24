@@ -8,6 +8,8 @@ import (
 )
 
 var CC *cache.Cache
+var ai *AppInfo
+var phpsess *http.Cookie
 
 func init() {
 	CC = cache.New(1*time.Hour, 2*time.Hour)
@@ -33,11 +35,14 @@ func SetSessionId(cookies []*http.Cookie) {
 }
 
 func GetSessionId() *http.Cookie {
+	if phpsess != nil {
+		return phpsess
+	}
 	foo, found := CC.Get(fmt.Sprintf("PHPSESSIONID_%s", Config.Appid))
 	if found {
-		return foo.(*http.Cookie)
+		phpsess = foo.(*http.Cookie)
 	}
-	return nil
+	return phpsess
 }
 
 type AppInfo struct {
@@ -54,9 +59,28 @@ func SetAppInfoCache(appInfo *AppInfo) {
 }
 
 func GetAppInfoCache() *AppInfo {
+	if ai != nil {
+		return ai
+	}
+
 	foo, found := CC.Get(fmt.Sprintf("APPINFO_%s", Config.Appid))
 	if found {
-		return foo.(*AppInfo)
+		ai = foo.(*AppInfo)
 	}
-	return nil
+
+	return ai
+}
+
+func GetAppID() int64 {
+	if ai == nil {
+		return 0
+	}
+	return ai.Id
+}
+
+func GetAppName() string {
+	if ai == nil {
+		return ""
+	}
+	return ai.Name
 }
