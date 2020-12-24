@@ -114,13 +114,12 @@ func RemoteSync() error {
 
 		var res interface{}
 		postdata := fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", "", string(requestRemoteDevsJson))
-		logging.Dbug.Infof("data len %d", len(postdata))
 		res, err = utils.SyncServices(path, postdata)
 		if err != nil {
 			logging.Err.Error("post common/v1/sync_remote get error ", err)
 		}
 
-		logging.Norm.Infof("数据提交返回信息:", res)
+		logging.Norm.Infof("探视数据同步提交返回信息:", res)
 
 		return nil
 
@@ -212,14 +211,13 @@ func RemoteSync() error {
 	}
 
 	postdata := fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", string(delDevCodesJson), string(requestRemoteDevsJson))
-	logging.Dbug.Infof("data len %d", len(postdata))
 	var res interface{}
 	res, err = utils.SyncServices(path, postdata)
 	if err != nil {
 		logging.Err.Error(err)
 	}
 
-	logging.Norm.Infof("数据提交返回信息:", res)
+	logging.Norm.Infof("探视数据同步提交返回信息:", res)
 
 	return nil
 }

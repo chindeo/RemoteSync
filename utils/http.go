@@ -136,7 +136,7 @@ func Request(method, url, data string, auth bool) []byte {
 		}
 		req, _ := http.NewRequest(method, fullUrl, strings.NewReader(data))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Header.Set("AuthType", "4")
+		req.Header.Set("AuthType", Config.AuthType)
 		if auth {
 			req.Header.Set("X-Token", GetCacheToken())
 			phpSessionId := GetSessionId()

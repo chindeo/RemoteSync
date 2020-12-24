@@ -13,6 +13,7 @@ var Config = struct {
 	Timetype     string `default:"" env:"timetype"`
 	Timeduration int64  `default:"" env:"timeduration"`
 	DevType      string `default:"2" env:"devtype"`
+	AuthType     string `default:"2" env:"authtype"`
 }{}
 
 func init() {

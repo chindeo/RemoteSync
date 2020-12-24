@@ -94,7 +94,7 @@ func UserTypeSync() error {
 			logging.Err.Error("post common/v1/sync_remote get error ", err)
 		}
 
-		logging.Norm.Infof("数据提交返回信息:", res)
+		logging.Norm.Infof("职位数据同步提交返回信息:", res)
 
 		return nil
 
@@ -177,7 +177,7 @@ func UserTypeSync() error {
 		logging.Err.Error(err)
 	}
 
-	logging.Norm.Infof("数据提交返回信息:", res)
+	logging.Norm.Infof("职位数据同步提交返回信息:", res)
 
 	return nil
 }
