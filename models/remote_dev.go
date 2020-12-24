@@ -2,7 +2,6 @@ package models
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/snowlyg/RemoteSync/logging"
 	"github.com/snowlyg/RemoteSync/utils"
@@ -43,13 +42,12 @@ type RequestRemoteDev struct {
 	ApplicationId   int64  `json:"application_id"`
 }
 
-func RemoteSync() error {
+func RemoteSync() {
 	appId := utils.GetAppID()
 	appName := utils.GetAppName()
 
 	if Sqlite == nil {
 		logging.Err.Error("database is not init")
-		return errors.New("database is not init")
 	}
 
 	query := "select ct_loc.loc_desc as loc_name, pa_patmas.pmi_name as name ,pa_adm.adm_in_pat_no,ct_hospital.hosp_desc as ct_hospital_name, pac_room.room_desc as pac_room_desc,pac_bed.bed_code as pac_bed_desc,dev_code,dev_desc,dev_type,dev_active,dev_status,dev_video_status  from cf_device "
@@ -64,7 +62,6 @@ func RemoteSync() error {
 	rows, err := Mysql.Raw(query).Rows()
 	if err != nil {
 		logging.Err.Error("mysql raw error :", err)
-		return err
 	}
 	defer rows.Close()
 
@@ -76,7 +73,7 @@ func RemoteSync() error {
 	}
 
 	if len(remoteDevs) == 0 {
-		return nil
+		return
 	}
 
 	var oldRemoteDevs []RemoteDev
@@ -112,16 +109,18 @@ func RemoteSync() error {
 
 		requestRemoteDevsJson, _ := json.Marshal(&requestRemoteDevs)
 
-		var res interface{}
-		postdata := fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", "", string(requestRemoteDevsJson))
-		res, err = utils.SyncServices(path, postdata)
-		if err != nil {
-			logging.Err.Error("post common/v1/sync_remote get error ", err)
+		if len(requestRemoteDevsJson) > 0 {
+			var res interface{}
+			postdata := fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", "", string(requestRemoteDevsJson))
+			res, err = utils.SyncServices(path, postdata)
+			if err != nil {
+				logging.Err.Error("post common/v1/sync_remote get error ", err)
+			}
+
+			logging.Norm.Infof("探视数据同步提交返回信息:", res)
 		}
 
-		logging.Norm.Infof("探视数据同步提交返回信息:", res)
-
-		return nil
+		return
 
 	}
 
@@ -210,14 +209,16 @@ func RemoteSync() error {
 		requestRemoteDevsJson, _ = json.Marshal(&requestRemoteDevs)
 	}
 
-	postdata := fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", string(delDevCodesJson), string(requestRemoteDevsJson))
-	var res interface{}
-	res, err = utils.SyncServices(path, postdata)
-	if err != nil {
-		logging.Err.Error(err)
+	if len(delDevCodesJson) > 0 || len(requestRemoteDevsJson) > 0 {
+		postdata := fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", string(delDevCodesJson), string(requestRemoteDevsJson))
+		var res interface{}
+		res, err = utils.SyncServices(path, postdata)
+		if err != nil {
+			logging.Err.Error(err)
+		}
+
+		logging.Norm.Infof("探视数据同步提交返回信息:", res)
 	}
 
-	logging.Norm.Infof("探视数据同步提交返回信息:", res)
-
-	return nil
+	return
 }

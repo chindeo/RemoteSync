@@ -53,9 +53,9 @@ func sync() {
 			if utils.GetAppInfoCache() == nil {
 				logging.Err.Error("app info is empty")
 			}
-			go models.RemoteSync()
-			go models.LocSync()
-			go models.UserTypeSync()
+			models.RemoteSync()
+			models.LocSync()
+			models.UserTypeSync()
 			utils.CC.Delete(fmt.Sprintf("XToken_%s", utils.Config.Appid))
 			utils.CC.Delete(fmt.Sprintf("APPINFO_%s", utils.Config.Appid))
 		}
@@ -122,10 +122,7 @@ func main() {
 		if utils.GetAppInfoCache() == nil {
 			logging.Err.Error("app info is empty")
 		}
-		err := models.RemoteSync()
-		if err != nil {
-			logging.Err.Error("探视同步错误", err)
-		}
+		models.RemoteSync()
 		logging.Dbug.Info("探视数据同步")
 
 		return
@@ -138,10 +135,8 @@ func main() {
 		if utils.GetAppInfoCache() == nil {
 			logging.Err.Error("app info is empty")
 		}
-		err := models.LocSync()
-		if err != nil {
-			logging.Err.Error("服务科室同步错误", err)
-		}
+		models.LocSync()
+
 		logging.Dbug.Info("科室数据同步")
 
 		return
@@ -154,10 +149,7 @@ func main() {
 		if utils.GetAppInfoCache() == nil {
 			logging.Err.Error("app info is empty")
 		}
-		err := models.UserTypeSync()
-		if err != nil {
-			logging.Err.Error("职称同步错误：", err)
-		}
+		models.UserTypeSync()
 		logging.Dbug.Info("职称数据同步")
 
 		return

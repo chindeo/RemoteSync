@@ -40,6 +40,10 @@ func SyncServices(path, data string) (interface{}, error) {
 	if re.Code == 401 {
 		CC.Delete(fmt.Sprintf("XToken_%s", Config.Appid))
 		CC.DeleteExpired()
+		if err := GetToken(); err != nil {
+			return nil, err
+		}
+		SyncServices(path, data)
 		return re, nil
 	}
 

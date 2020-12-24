@@ -2,7 +2,6 @@ package models
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/snowlyg/RemoteSync/logging"
 	"github.com/snowlyg/RemoteSync/utils"
@@ -28,13 +27,12 @@ type RequestLoc struct {
 	ApplicationId   int64  `json:"application_id"`
 }
 
-func LocSync() error {
+func LocSync() {
 	appId := utils.GetAppID()
 	appName := utils.GetAppName()
 
 	if Sqlite == nil {
 		logging.Err.Error("database is not init")
-		return errors.New("database is not init")
 	}
 
 	query := "select loc_id,loc_desc,loc_ward_flag,loc_active_flag,ct_hospital_id from ct_loc where loc_active_flag = 1"
@@ -42,7 +40,6 @@ func LocSync() error {
 	rows, err := Mysql.Raw(query).Rows()
 	if err != nil {
 		logging.Err.Error("mysql raw error :", err)
-		return err
 	}
 	defer rows.Close()
 
@@ -54,7 +51,7 @@ func LocSync() error {
 	}
 
 	if len(locs) == 0 {
-		return nil
+		return
 	}
 
 	var oldLocs []Loc
@@ -83,15 +80,17 @@ func LocSync() error {
 
 		requestLocsJson, _ := json.Marshal(&requestLocs)
 
-		var res interface{}
-		res, err = utils.SyncServices(path, fmt.Sprintf("delLocIds=%s&requestLocs=%s", "", string(requestLocsJson)))
-		if err != nil {
-			logging.Err.Error("post common/v1/sync_remote get error ", err)
+		if len(requestLocsJson) > 0 {
+			var res interface{}
+			res, err = utils.SyncServices(path, fmt.Sprintf("delLocIds=%s&requestLocs=%s", "", string(requestLocsJson)))
+			if err != nil {
+				logging.Err.Error("post common/v1/sync_remote get error ", err)
+			}
+
+			logging.Norm.Infof("科室数据同步提交返回信息:", res)
 		}
 
-		logging.Norm.Infof("科室数据同步提交返回信息:", res)
-
-		return nil
+		return
 
 	}
 
@@ -161,13 +160,15 @@ func LocSync() error {
 		requestLocsJson, _ = json.Marshal(&requestLocs)
 	}
 
-	var res interface{}
-	res, err = utils.SyncServices(path, fmt.Sprintf("delLocIds=%s&requestLocs=%s", string(delLocIdsJson), string(requestLocsJson)))
-	if err != nil {
-		logging.Err.Error(err)
+	if len(delLocIdsJson) > 0 || len(requestLocsJson) > 0 {
+		var res interface{}
+		res, err = utils.SyncServices(path, fmt.Sprintf("delLocIds=%s&requestLocs=%s", string(delLocIdsJson), string(requestLocsJson)))
+		if err != nil {
+			logging.Err.Error(err)
+		}
+
+		logging.Norm.Infof("科室数据同步提交返回信息:", res)
 	}
 
-	logging.Norm.Infof("科室数据同步提交返回信息:", res)
-
-	return nil
+	return
 }

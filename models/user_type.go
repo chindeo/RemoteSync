@@ -2,7 +2,6 @@ package models
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/snowlyg/RemoteSync/logging"
 	"github.com/snowlyg/RemoteSync/utils"
@@ -32,13 +31,12 @@ type RequestUserType struct {
 	ApplicationId   int64  `json:"application_id"`
 }
 
-func UserTypeSync() error {
+func UserTypeSync() {
 	appId := utils.GetAppID()
 	appName := utils.GetAppName()
 
 	if Sqlite == nil {
 		logging.Err.Error("database is not init")
-		return errors.New("database is not init")
 	}
 
 	query := "select utp_id,utp_code,utp_desc,utp_type,utp_active,utp_contrast from ct_user_type where utp_active = '1'"
@@ -46,7 +44,6 @@ func UserTypeSync() error {
 	rows, err := Mysql.Raw(query).Rows()
 	if err != nil {
 		logging.Err.Error("mysql raw error :", err)
-		return err
 	}
 	defer rows.Close()
 
@@ -58,7 +55,7 @@ func UserTypeSync() error {
 	}
 
 	if len(userTypes) == 0 {
-		return nil
+		return
 	}
 
 	var oldUserTypes []UserType
@@ -88,15 +85,16 @@ func UserTypeSync() error {
 		Sqlite.Create(&newUserTypes)
 
 		requestUserTypesJson, _ := json.Marshal(&requestUserTypes)
-		var res interface{}
-		res, err = utils.SyncServices(path, fmt.Sprintf("delUserTypeIds=%s&requestUserTypes=%s", "", string(requestUserTypesJson)))
-		if err != nil {
-			logging.Err.Error("post common/v1/sync_remote get error ", err)
+		if len(requestUserTypesJson) > 0 {
+			var res interface{}
+			res, err = utils.SyncServices(path, fmt.Sprintf("delUserTypeIds=%s&requestUserTypes=%s", "", string(requestUserTypesJson)))
+			if err != nil {
+				logging.Err.Error("post common/v1/sync_remote get error ", err)
+			}
+			logging.Norm.Infof("职位数据同步提交返回信息:", res)
 		}
 
-		logging.Norm.Infof("职位数据同步提交返回信息:", res)
-
-		return nil
+		return
 
 	}
 
@@ -171,13 +169,15 @@ func UserTypeSync() error {
 		requestUserTypesJson, _ = json.Marshal(&requestUserTypes)
 	}
 
-	var res interface{}
-	res, err = utils.SyncServices(path, fmt.Sprintf("delUserTypeIds=%s&requestUserTypes=%s", string(delUserTypeIdsJson), string(requestUserTypesJson)))
-	if err != nil {
-		logging.Err.Error(err)
+	if len(requestUserTypesJson) > 0 || len(delUserTypeIdsJson) > 0 {
+		var res interface{}
+		res, err = utils.SyncServices(path, fmt.Sprintf("delUserTypeIds=%s&requestUserTypes=%s", string(delUserTypeIdsJson), string(requestUserTypesJson)))
+		if err != nil {
+			logging.Err.Error(err)
+		}
+
+		logging.Norm.Infof("职位数据同步提交返回信息:", res)
 	}
 
-	logging.Norm.Infof("职位数据同步提交返回信息:", res)
-
-	return nil
+	return
 }

@@ -28,6 +28,8 @@ func init() {
 	if err != nil {
 		panic(fmt.Sprintf("database mysql init error:%+v", err))
 	}
+
+	Mysql.DB()
 }
 
 func Close() {
