@@ -53,11 +53,18 @@ func sync() {
 			if utils.GetAppInfoCache() == nil {
 				logging.Err.Error("app info is empty")
 			}
-			models.RemoteSync()
-			models.LocSync()
-			models.UserTypeSync()
-			utils.CC.Delete(fmt.Sprintf("XToken_%s", utils.Config.Appid))
-			utils.CC.Delete(fmt.Sprintf("APPINFO_%s", utils.Config.Appid))
+
+			go func() {
+				models.RemoteSync()
+			}()
+			go func() {
+				models.LocSync()
+			}()
+			go func() {
+				models.UserTypeSync()
+			}()
+			//utils.CC.Delete(fmt.Sprintf("XToken_%s", utils.Config.Appid))
+			//utils.CC.Delete(fmt.Sprintf("APPINFO_%s", utils.Config.Appid))
 		}
 		chSy <- 1
 	}()
