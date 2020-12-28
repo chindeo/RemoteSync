@@ -112,12 +112,13 @@ func GetAppInfo() error {
 		if air.Data == nil {
 			return errors.New(fmt.Sprintf("get appinfo return response %+v", air))
 		}
-		fmt.Println(fmt.Sprintf("get appinfo return response %+v", air.Data))
+		fmt.Println(fmt.Sprintf("get appinfo return response %+v", air))
 		SetAppInfoCache(air.Data)
 		return nil
 	} else if air.Code == 401 {
 		CC.Delete(fmt.Sprintf("XToken_%s", Config.Appid))
 		CC.DeleteExpired()
+		fmt.Println(fmt.Sprintf("get appinfo return response %+v", air))
 		return nil
 	} else {
 		return errors.New(fmt.Sprintf("get appinfo return response %+v", air))
@@ -139,6 +140,7 @@ func Request(method, url, data string, auth bool) []byte {
 		req, _ := http.NewRequest(method, fullUrl, strings.NewReader(data))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 		req.Header.Set("AuthType", Config.AuthType)
+		req.Header.Set("MAC", Config.Appid)
 		if auth {
 			req.Header.Set("X-Token", GetCacheToken())
 			phpSessionId := GetSessionId()

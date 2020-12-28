@@ -8,9 +8,9 @@ require (
 	github.com/kardianos/service v1.2.0
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/satori/go.uuid v1.2.0
 	go.uber.org/zap v1.16.0
 	gorm.io/driver/mysql v1.0.3
 	gorm.io/driver/sqlite v1.1.4
 	gorm.io/gorm v1.20.8
-	honnef.co/go/tools v0.0.1-2019.2.3
 )

@@ -63,8 +63,6 @@ func sync() {
 			go func() {
 				models.UserTypeSync()
 			}()
-			//utils.CC.Delete(fmt.Sprintf("XToken_%s", utils.Config.Appid))
-			//utils.CC.Delete(fmt.Sprintf("APPINFO_%s", utils.Config.Appid))
 		}
 		chSy <- 1
 	}()
