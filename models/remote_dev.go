@@ -65,8 +65,6 @@ func RemoteSync() {
 	for rows.Next() {
 		var remoteDev RemoteDev
 		GetSqlite().ScanRows(rows, &remoteDev)
-		db, _ := GetSqlite().DB()
-		db.Close()
 		remoteDevs = append(remoteDevs, remoteDev)
 	}
 
@@ -76,8 +74,6 @@ func RemoteSync() {
 
 	var oldRemoteDevs []RemoteDev
 	GetSqlite().Find(&oldRemoteDevs)
-	db, _ := GetSqlite().DB()
-	db.Close()
 
 	var delDevCodes []string
 	var newRemoteDevs []RemoteDev
@@ -106,8 +102,6 @@ func RemoteSync() {
 			requestRemoteDevs = append(requestRemoteDevs, requestRemoteDev)
 		}
 		GetSqlite().Create(&newRemoteDevs)
-		db, _ = GetSqlite().DB()
-		db.Close()
 
 		requestRemoteDevsJson, _ := json.Marshal(&requestRemoteDevs)
 
@@ -201,15 +195,11 @@ func RemoteSync() {
 	var requestRemoteDevsJson []byte
 	if len(delDevCodes) > 0 {
 		GetSqlite().Where("dev_code in ?", delDevCodes).Delete(&RemoteDev{})
-		db, _ = GetSqlite().DB()
-		db.Close()
 		delDevCodesJson, _ = json.Marshal(&delDevCodes)
 	}
 
 	if len(newRemoteDevs) > 0 {
 		GetSqlite().Create(&newRemoteDevs)
-		db, _ = GetSqlite().DB()
-		db.Close()
 	}
 	if len(requestRemoteDevs) > 0 {
 		requestRemoteDevsJson, _ = json.Marshal(&requestRemoteDevs)

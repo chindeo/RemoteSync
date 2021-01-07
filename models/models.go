@@ -19,6 +19,7 @@ func GetSqlite() *gorm.DB {
 	if sqliteDB != nil {
 		return sqliteDB
 	}
+
 	single.Lock()
 	file := utils.DBFile()
 	sqliteDB, err = gorm.Open(sqlite.Open(file), &gorm.Config{})

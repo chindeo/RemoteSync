@@ -46,8 +46,6 @@ func UserTypeSync() {
 	for rows.Next() {
 		var userType UserType
 		GetSqlite().ScanRows(rows, &userType)
-		db, _ := GetSqlite().DB()
-		db.Close()
 		userTypes = append(userTypes, userType)
 	}
 
@@ -57,9 +55,6 @@ func UserTypeSync() {
 
 	var oldUserTypes []UserType
 	GetSqlite().Find(&oldUserTypes)
-	db, _ := GetSqlite().DB()
-	db.Close()
-
 	var delUserTypeIds []int64
 	var newUserTypes []UserType
 	var requestUserTypes []*RequestUserType
@@ -82,15 +77,12 @@ func UserTypeSync() {
 			requestUserTypes = append(requestUserTypes, requestUserType)
 		}
 		GetSqlite().Create(&newUserTypes)
-		db, _ = GetSqlite().DB()
-		db.Close()
-
 		requestUserTypesJson, _ := json.Marshal(&requestUserTypes)
 		if len(requestUserTypesJson) > 0 {
 			var res interface{}
 			res, err = utils.SyncServices(path, fmt.Sprintf("delUserTypeIds=%s&requestUserTypes=%s", "", string(requestUserTypesJson)))
 			if err != nil {
-				logging.GetUserTypeLogger().Error("post common/v1/sync_remote get error ", err)
+				logging.GetUserTypeLogger().Error(err)
 			}
 			logging.GetUserTypeLogger().Infof("职位数据同步提交返回信息:", res)
 		}
@@ -160,15 +152,12 @@ func UserTypeSync() {
 	var requestUserTypesJson []byte
 	if len(delUserTypeIds) > 0 {
 		GetSqlite().Where("dev_code in ?", delUserTypeIds).Delete(&UserType{})
-		db, _ = GetSqlite().DB()
-		db.Close()
 		delUserTypeIdsJson, _ = json.Marshal(&delUserTypeIds)
 	}
 
 	if len(newUserTypes) > 0 {
 		GetSqlite().Create(&newUserTypes)
-		db, _ = GetSqlite().DB()
-		db.Close()
+
 	}
 	if len(requestUserTypes) > 0 {
 		requestUserTypesJson, _ = json.Marshal(&requestUserTypes)

@@ -51,7 +51,7 @@ func SyncServices(path, data string) (interface{}, error) {
 }
 
 func GetToken() error {
-	token := GetCacheToken()
+	token = GetCacheToken()
 	if token != "" {
 		return nil
 	}

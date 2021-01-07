@@ -68,7 +68,8 @@ func sync() {
 
 func (p *program) Stop(s service.Service) error {
 	defer log.Println("********** STOP **********")
-	//models.Close()
+	db, _ := models.GetSqlite().DB()
+	db.Close()
 	return nil
 }
 

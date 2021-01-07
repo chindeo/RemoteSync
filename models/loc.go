@@ -43,8 +43,6 @@ func LocSync() {
 	for rows.Next() {
 		var loc Loc
 		GetSqlite().ScanRows(rows, &loc)
-		db, _ := GetSqlite().DB()
-		db.Close()
 		locs = append(locs, loc)
 	}
 
@@ -54,8 +52,6 @@ func LocSync() {
 
 	var oldLocs []Loc
 	GetSqlite().Find(&oldLocs)
-	db, _ := GetSqlite().DB()
-	db.Close()
 
 	var delLocIds []int64
 	var newLocs []Loc
@@ -77,8 +73,6 @@ func LocSync() {
 			requestLocs = append(requestLocs, requestLoc)
 		}
 		GetSqlite().Create(&newLocs)
-		db, _ = GetSqlite().DB()
-		db.Close()
 
 		requestLocsJson, _ := json.Marshal(&requestLocs)
 
@@ -86,7 +80,7 @@ func LocSync() {
 			var res interface{}
 			res, err = utils.SyncServices(path, fmt.Sprintf("delLocIds=%s&requestLocs=%s", "", string(requestLocsJson)))
 			if err != nil {
-				logging.GetLocLogger().Error("post common/v1/sync_remote get error ", err)
+				logging.GetLocLogger().Error(err)
 			}
 
 			logging.GetLocLogger().Infof("科室数据同步提交返回信息:", res)
@@ -151,15 +145,11 @@ func LocSync() {
 	var requestLocsJson []byte
 	if len(delLocIds) > 0 {
 		GetSqlite().Where("loc_id in ?", delLocIds).Delete(&Loc{})
-		db, _ = GetSqlite().DB()
-		db.Close()
 		delLocIdsJson, _ = json.Marshal(&delLocIds)
 	}
 
 	if len(newLocs) > 0 {
 		GetSqlite().Create(&newLocs)
-		db, _ = GetSqlite().DB()
-		db.Close()
 	}
 
 	if len(requestLocs) > 0 {
