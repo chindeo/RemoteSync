@@ -28,9 +28,7 @@ func (p *program) Start(s service.Service) error {
 }
 
 func (p *program) run() {
-	go func() {
-		sync()
-	}()
+	sync()
 }
 
 func sync() {
@@ -68,8 +66,6 @@ func sync() {
 
 func (p *program) Stop(s service.Service) error {
 	defer log.Println("********** STOP **********")
-	db, _ := models.GetSqlite().DB()
-	db.Close()
 	return nil
 }
 

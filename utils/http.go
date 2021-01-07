@@ -112,13 +112,13 @@ func GetAppInfo() error {
 		if air.Data == nil {
 			return errors.New(fmt.Sprintf("get appinfo return response %+v", air))
 		}
-		fmt.Println(fmt.Sprintf("get appinfo return response %+v", air))
+		//fmt.Println(fmt.Sprintf("get appinfo return response %+v", air))
 		SetAppInfoCache(air.Data)
 		return nil
 	} else if air.Code == 401 {
 		CC.Delete(fmt.Sprintf("XToken_%s", Config.Appid))
 		CC.DeleteExpired()
-		fmt.Println(fmt.Sprintf("get appinfo return response %+v", air))
+		//fmt.Println(fmt.Sprintf("get appinfo return response %+v", air))
 		return nil
 	} else {
 		return errors.New(fmt.Sprintf("get appinfo return response %+v", air))

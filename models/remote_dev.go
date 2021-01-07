@@ -64,7 +64,7 @@ func RemoteSync() {
 	var remoteDevs []RemoteDev
 	for rows.Next() {
 		var remoteDev RemoteDev
-		GetSqlite().ScanRows(rows, &remoteDev)
+		GetMysql().ScanRows(rows, &remoteDev)
 		remoteDevs = append(remoteDevs, remoteDev)
 	}
 
@@ -72,145 +72,38 @@ func RemoteSync() {
 		return
 	}
 
-	var oldRemoteDevs []RemoteDev
-	GetSqlite().Find(&oldRemoteDevs)
-
-	var delDevCodes []string
-	var newRemoteDevs []RemoteDev
 	var requestRemoteDevs []*RequestRemoteDev
 
 	// 没有旧数据
 	path := "common/v1/data_sync/remote"
-	if len(oldRemoteDevs) == 0 {
-		newRemoteDevs = remoteDevs
-		for _, re := range remoteDevs {
-			requestRemoteDev := &RequestRemoteDev{
-				Name:            re.Name,
-				AdmInPatNo:      re.AdmInPatNo,
-				DevCode:         re.DevCode,
-				DevDesc:         re.DevDesc,
-				PacRoomDesc:     re.PacRoomDesc,
-				PacBedDesc:      re.PacBedDesc,
-				DevStatus:       re.DevStatus,
-				DevActive:       re.DevActive,
-				DevVideoStatus:  re.DevVideoStatus,
-				CtHospitalName:  re.CtHospitalName,
-				LocName:         re.LocName,
-				ApplicationId:   appId,
-				ApplicationName: appName,
-			}
-			requestRemoteDevs = append(requestRemoteDevs, requestRemoteDev)
-		}
-		GetSqlite().Create(&newRemoteDevs)
 
-		requestRemoteDevsJson, _ := json.Marshal(&requestRemoteDevs)
-
-		if len(requestRemoteDevsJson) > 0 {
-			var res interface{}
-			postdata := fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", "", string(requestRemoteDevsJson))
-			res, err = utils.SyncServices(path, postdata)
-			if err != nil {
-				logging.GetRemoteLogger().Error("post common/v1/sync_remote get error ", err)
-			}
-
-			logging.GetRemoteLogger().Infof("探视数据同步提交返回信息:", res)
-		}
-
-		return
-
-	}
-
-	// not in new
-	for _, ore := range oldRemoteDevs {
-		in := false
-		for _, re := range remoteDevs {
-			if ore.DevCode == re.DevCode {
-				in = true
-			}
-		}
-		if !in {
-			delDevCodes = append(delDevCodes, ore.DevCode)
-		}
-	}
-
-	// changed
 	for _, re := range remoteDevs {
-		in := false
-		for _, ore := range oldRemoteDevs {
-			if ore.DevCode == re.DevCode {
-				if ore.Name != re.Name ||
-					ore.AdmInPatNo != re.AdmInPatNo ||
-					ore.DevDesc != re.DevDesc ||
-					ore.PacRoomDesc != re.PacRoomDesc ||
-					ore.PacBedDesc != re.PacBedDesc ||
-					ore.CtHospitalName != re.CtHospitalName ||
-					ore.DevVideoStatus != re.DevVideoStatus ||
-					ore.DevStatus != re.DevStatus ||
-					ore.DevActive != re.DevActive {
-					requestRemoteDev := &RequestRemoteDev{
-						Name:            re.Name,
-						AdmInPatNo:      re.AdmInPatNo,
-						DevCode:         re.DevCode,
-						DevDesc:         re.DevDesc,
-						PacRoomDesc:     re.PacRoomDesc,
-						PacBedDesc:      re.PacBedDesc,
-						DevStatus:       re.DevStatus,
-						DevActive:       re.DevActive,
-						DevVideoStatus:  re.DevVideoStatus,
-						CtHospitalName:  re.CtHospitalName,
-						LocName:         re.LocName,
-						ApplicationId:   appId,
-						ApplicationName: appName,
-					}
-					requestRemoteDevs = append(requestRemoteDevs, requestRemoteDev)
-					newRemoteDevs = append(newRemoteDevs, re)
-					delDevCodes = append(delDevCodes, ore.DevCode)
-				}
-				in = true
-			}
+		requestRemoteDev := &RequestRemoteDev{
+			Name:            re.Name,
+			AdmInPatNo:      re.AdmInPatNo,
+			DevCode:         re.DevCode,
+			DevDesc:         re.DevDesc,
+			PacRoomDesc:     re.PacRoomDesc,
+			PacBedDesc:      re.PacBedDesc,
+			DevStatus:       re.DevStatus,
+			DevActive:       re.DevActive,
+			DevVideoStatus:  re.DevVideoStatus,
+			CtHospitalName:  re.CtHospitalName,
+			LocName:         re.LocName,
+			ApplicationId:   appId,
+			ApplicationName: appName,
 		}
-
-		if !in {
-			requestRemoteDev := &RequestRemoteDev{
-				Name:            re.Name,
-				AdmInPatNo:      re.AdmInPatNo,
-				DevCode:         re.DevCode,
-				DevDesc:         re.DevDesc,
-				PacRoomDesc:     re.PacRoomDesc,
-				PacBedDesc:      re.PacBedDesc,
-				DevStatus:       re.DevStatus,
-				DevActive:       re.DevActive,
-				DevVideoStatus:  re.DevVideoStatus,
-				CtHospitalName:  re.CtHospitalName,
-				LocName:         re.LocName,
-				ApplicationId:   appId,
-				ApplicationName: appName,
-			}
-			requestRemoteDevs = append(requestRemoteDevs, requestRemoteDev)
-			newRemoteDevs = append(newRemoteDevs, re)
-		}
+		requestRemoteDevs = append(requestRemoteDevs, requestRemoteDev)
 	}
 
-	var delDevCodesJson []byte
 	var requestRemoteDevsJson []byte
-	if len(delDevCodes) > 0 {
-		GetSqlite().Where("dev_code in ?", delDevCodes).Delete(&RemoteDev{})
-		delDevCodesJson, _ = json.Marshal(&delDevCodes)
-	}
-
-	if len(newRemoteDevs) > 0 {
-		GetSqlite().Create(&newRemoteDevs)
-	}
-	if len(requestRemoteDevs) > 0 {
-		requestRemoteDevsJson, _ = json.Marshal(&requestRemoteDevs)
-	}
-
-	if len(delDevCodesJson) > 0 || len(requestRemoteDevsJson) > 0 {
-		postdata := fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", string(delDevCodesJson), string(requestRemoteDevsJson))
+	requestRemoteDevsJson, err = json.Marshal(&requestRemoteDevs)
+	if len(requestRemoteDevsJson) > 0 {
 		var res interface{}
-		res, err = utils.SyncServices(path, postdata)
+		postData := fmt.Sprintf("&requestRemoteDevs=%s", string(requestRemoteDevsJson))
+		res, err = utils.SyncServices(path, postData)
 		if err != nil {
-			logging.GetRemoteLogger().Error(err)
+			logging.GetRemoteLogger().Error("post common/v1/sync_remote get error ", err)
 		}
 
 		logging.GetRemoteLogger().Infof("探视数据同步提交返回信息:", res)
