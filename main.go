@@ -22,6 +22,7 @@ type program struct {
 }
 
 func (p *program) Start(s service.Service) error {
+	defer println("********* START *********")
 	go p.run()
 	return nil
 }
@@ -48,10 +49,10 @@ func sync() {
 	go func() {
 		for range tickerSync.C {
 			if err := utils.GetToken(); err != nil {
-				logging.Err.Error("get token err ", err)
+				logging.GetCommonLogger().Error("get token err ", err)
 			}
 			if utils.GetAppInfoCache() == nil {
-				logging.Err.Error("app info is empty")
+				logging.GetCommonLogger().Error("app info is empty")
 			}
 
 			go func() {
@@ -63,6 +64,8 @@ func sync() {
 			go func() {
 				models.UserTypeSync()
 			}()
+
+			logging.GetCommonLogger().Infof("执行数据同步", time.Now())
 		}
 		chSy <- 1
 	}()
@@ -100,62 +103,62 @@ func main() {
 	prg := &program{}
 	s, err := service.New(prg, svcConfig)
 	if err != nil {
-		logging.Err.Error(err)
+		logging.GetCommonLogger().Error(err)
 	}
 
 	if err != nil {
-		logging.Err.Error(err)
+		logging.GetCommonLogger().Error(err)
 	}
 
 	if *Action == "install" {
-		err := s.Install()
+		err = s.Install()
 		if err != nil {
-			logging.Err.Error("服务安装错误：", err)
+			logging.GetCommonLogger().Error("服务安装错误：", err)
 		}
 		err = s.Start()
 		if err != nil {
-			logging.Err.Error("服务启动错误", err)
+			logging.GetCommonLogger().Error("服务启动错误", err)
 		}
-		logging.Dbug.Info("服务安装并启动")
+		logging.GetCommonLogger().Info("服务安装并启动")
 		return
 	}
 
 	if *Action == "remote_sync" {
-		if err := utils.GetToken(); err != nil {
-			logging.Err.Error("get token err ", err)
+		if err = utils.GetToken(); err != nil {
+			logging.GetCommonLogger().Error("get token err ", err)
 		}
 		if utils.GetAppInfoCache() == nil {
-			logging.Err.Error("app info is empty")
+			logging.GetCommonLogger().Error("app info is empty")
 		}
 		models.RemoteSync()
-		logging.Dbug.Info("探视数据同步")
+		logging.GetCommonLogger().Info("探视数据同步")
 
 		return
 	}
 
 	if *Action == "loc_sync" {
-		if err := utils.GetToken(); err != nil {
-			logging.Err.Error("get token err ", err)
+		if err = utils.GetToken(); err != nil {
+			logging.GetCommonLogger().Error("get token err ", err)
 		}
 		if utils.GetAppInfoCache() == nil {
-			logging.Err.Error("app info is empty")
+			logging.GetCommonLogger().Error("app info is empty")
 		}
 		models.LocSync()
 
-		logging.Dbug.Info("科室数据同步")
+		logging.GetCommonLogger().Info("科室数据同步")
 
 		return
 	}
 
 	if *Action == "user_type_sync" {
-		if err := utils.GetToken(); err != nil {
-			logging.Err.Error("get token err ", err)
+		if err = utils.GetToken(); err != nil {
+			logging.GetCommonLogger().Error("get token err ", err)
 		}
 		if utils.GetAppInfoCache() == nil {
-			logging.Err.Error("app info is empty")
+			logging.GetCommonLogger().Error("app info is empty")
 		}
 		models.UserTypeSync()
-		logging.Dbug.Info("职称数据同步")
+		logging.GetCommonLogger().Info("职称数据同步")
 
 		return
 	}
@@ -164,57 +167,64 @@ func main() {
 		utils.CC.Delete(fmt.Sprintf("XToken_%s", utils.Config.Appid))
 		utils.CC.Delete(fmt.Sprintf("APPINFO_%s", utils.Config.Appid))
 		utils.CC.DeleteExpired()
-		logging.Dbug.Info("清除缓存")
+		logging.GetCommonLogger().Info("清除缓存")
 		return
 	}
 
 	if *Action == "remove" {
 		status, _ := s.Status()
 		if status == service.StatusRunning {
-			err := s.Stop()
+			err = s.Stop()
 			if err != nil {
-				logging.Err.Error("服务停止错误：", err)
+				logging.GetCommonLogger().Error("服务停止错误：", err)
 			}
 		}
 
 		err = s.Uninstall()
 		if err != nil {
-			logging.Err.Error("服务卸载错误：", err)
+			logging.GetCommonLogger().Error("服务卸载错误：", err)
 		}
-		logging.Dbug.Info("服务卸载成功")
+		logging.GetCommonLogger().Info("服务卸载成功")
 		return
 	}
 
 	if *Action == "start" {
-		err := s.Start()
+		err = s.Start()
 		if err != nil {
-			logging.Err.Error("服务启动错误：", err)
+			logging.GetCommonLogger().Error("服务启动错误：", err)
 		}
-		logging.Dbug.Info("服务启动成功")
+		logging.GetCommonLogger().Info("服务启动成功")
 		return
 	}
 
-	if *Action == "stop" {
-		err := s.Stop()
+	if *Action == "auto_migrate" {
+		err = models.GetSqlite().AutoMigrate(&models.RemoteDev{}, &models.Loc{}, &models.UserType{})
 		if err != nil {
-			logging.Err.Error("服务停止错误：", err)
+			fmt.Println(fmt.Sprintf("database model init error:%+v", err))
 		}
-		logging.Dbug.Info("服务停止成功")
+	}
+
+	if *Action == "stop" {
+		err = s.Stop()
+		if err != nil {
+			logging.GetCommonLogger().Error("服务停止错误：", err)
+		}
+		logging.GetCommonLogger().Info("服务停止成功")
 		return
 	}
 
 	if *Action == "restart" {
-		err := s.Restart()
+		err = s.Restart()
 		if err != nil {
-			logging.Err.Error("服务重启错误：", err)
+			logging.GetCommonLogger().Error("服务重启错误：", err)
 		}
 
-		logging.Dbug.Info("服务重启成功")
+		logging.GetCommonLogger().Info("服务重启成功")
 		return
 	}
 
 	if *Action == "version" {
-		logging.Dbug.Info(fmt.Sprintf("版本号：%s", Version))
+		logging.GetCommonLogger().Info(fmt.Sprintf("版本号：%s", Version))
 		return
 	}
 

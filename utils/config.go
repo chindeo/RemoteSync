@@ -14,6 +14,7 @@ var Config = struct {
 	Timeduration int64  `default:"" env:"timeduration"`
 	DevType      string `default:"2" env:"devtype"`
 	AuthType     string `default:"2" env:"authtype"`
+	Outdir       string `default:"" env:"outdir"`
 }{}
 
 func init() {

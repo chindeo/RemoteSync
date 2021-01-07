@@ -31,22 +31,20 @@ func LocSync() {
 	appId := utils.GetAppID()
 	appName := utils.GetAppName()
 
-	if Sqlite == nil {
-		logging.Err.Error("database is not init")
-	}
-
 	query := "select loc_id,loc_desc,loc_ward_flag,loc_active_flag,ct_hospital_id from ct_loc where loc_active_flag = 1"
 
-	rows, err := Mysql.Raw(query).Rows()
+	rows, err := GetMysql().Raw(query).Rows()
 	if err != nil {
-		logging.Err.Error("mysql raw error :", err)
+		logging.GetLocLogger().Error("mysql raw error :", err)
 	}
 	defer rows.Close()
 
 	var locs []Loc
 	for rows.Next() {
 		var loc Loc
-		Sqlite.ScanRows(rows, &loc)
+		GetSqlite().ScanRows(rows, &loc)
+		db, _ := GetSqlite().DB()
+		db.Close()
 		locs = append(locs, loc)
 	}
 
@@ -55,7 +53,9 @@ func LocSync() {
 	}
 
 	var oldLocs []Loc
-	Sqlite.Find(&oldLocs)
+	GetSqlite().Find(&oldLocs)
+	db, _ := GetSqlite().DB()
+	db.Close()
 
 	var delLocIds []int64
 	var newLocs []Loc
@@ -76,7 +76,9 @@ func LocSync() {
 			}
 			requestLocs = append(requestLocs, requestLoc)
 		}
-		Sqlite.Create(&newLocs)
+		GetSqlite().Create(&newLocs)
+		db, _ = GetSqlite().DB()
+		db.Close()
 
 		requestLocsJson, _ := json.Marshal(&requestLocs)
 
@@ -84,10 +86,10 @@ func LocSync() {
 			var res interface{}
 			res, err = utils.SyncServices(path, fmt.Sprintf("delLocIds=%s&requestLocs=%s", "", string(requestLocsJson)))
 			if err != nil {
-				logging.Err.Error("post common/v1/sync_remote get error ", err)
+				logging.GetLocLogger().Error("post common/v1/sync_remote get error ", err)
 			}
 
-			logging.Norm.Infof("科室数据同步提交返回信息:", res)
+			logging.GetLocLogger().Infof("科室数据同步提交返回信息:", res)
 		}
 
 		return
@@ -148,12 +150,16 @@ func LocSync() {
 	var delLocIdsJson []byte
 	var requestLocsJson []byte
 	if len(delLocIds) > 0 {
-		Sqlite.Where("loc_id in ?", delLocIds).Delete(&Loc{})
+		GetSqlite().Where("loc_id in ?", delLocIds).Delete(&Loc{})
+		db, _ = GetSqlite().DB()
+		db.Close()
 		delLocIdsJson, _ = json.Marshal(&delLocIds)
 	}
 
 	if len(newLocs) > 0 {
-		Sqlite.Create(&newLocs)
+		GetSqlite().Create(&newLocs)
+		db, _ = GetSqlite().DB()
+		db.Close()
 	}
 
 	if len(requestLocs) > 0 {
@@ -164,10 +170,10 @@ func LocSync() {
 		var res interface{}
 		res, err = utils.SyncServices(path, fmt.Sprintf("delLocIds=%s&requestLocs=%s", string(delLocIdsJson), string(requestLocsJson)))
 		if err != nil {
-			logging.Err.Error(err)
+			logging.GetLocLogger().Error(err)
 		}
 
-		logging.Norm.Infof("科室数据同步提交返回信息:", res)
+		logging.GetLocLogger().Infof("科室数据同步提交返回信息:", res)
 	}
 
 	return

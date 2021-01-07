@@ -137,7 +137,12 @@ func Request(method, url, data string, auth bool) []byte {
 		if strings.Contains(url, "http") || strings.Contains(url, "https") {
 			fullUrl = url
 		}
-		req, _ := http.NewRequest(method, fullUrl, strings.NewReader(data))
+		req, err := http.NewRequest(method, fullUrl, strings.NewReader(data))
+		if err != nil {
+			fmt.Println(fmt.Sprintf("%s: %+v", url, err))
+			result <- nil
+			return
+		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 		req.Header.Set("AuthType", Config.AuthType)
 		req.Header.Set("MAC", Config.Appid)
@@ -148,12 +153,15 @@ func Request(method, url, data string, auth bool) []byte {
 				req.AddCookie(phpSessionId)
 			}
 		}
-		resp, err := Client.Do(req)
-		defer resp.Body.Close()
+
+		var resp *http.Response
+		resp, err = Client.Do(req)
 		if err != nil {
 			fmt.Println(fmt.Sprintf("%s: %+v", url, err))
+			result <- nil
 			return
 		}
+		defer resp.Body.Close()
 
 		if !auth {
 			SetSessionId(resp.Cookies())

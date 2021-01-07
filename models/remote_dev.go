@@ -46,10 +46,6 @@ func RemoteSync() {
 	appId := utils.GetAppID()
 	appName := utils.GetAppName()
 
-	if Sqlite == nil {
-		logging.Err.Error("database is not init")
-	}
-
 	query := "select ct_loc.loc_desc as loc_name, pa_patmas.pmi_name as name ,pa_adm.adm_in_pat_no,ct_hospital.hosp_desc as ct_hospital_name, pac_room.room_desc as pac_room_desc,pac_bed.bed_code as pac_bed_desc,dev_code,dev_desc,dev_type,dev_active,dev_status,dev_video_status  from cf_device "
 	query += " left join pa_adm on pa_adm.pac_bed_id = cf_device.pac_bed_id"
 	query += " left join ct_loc on ct_loc.loc_id = cf_device.ct_loc_id"
@@ -59,16 +55,18 @@ func RemoteSync() {
 	query += " left join ct_hospital on pa_adm.ct_hospital_id = ct_hospital.hosp_id"
 	query += fmt.Sprintf(" where cf_device.dev_type = %s ", utils.Config.DevType)
 
-	rows, err := Mysql.Raw(query).Rows()
+	rows, err := GetMysql().Raw(query).Rows()
 	if err != nil {
-		logging.Err.Error("mysql raw error :", err)
+		logging.GetRemoteLogger().Error("mysql raw error :", err)
 	}
 	defer rows.Close()
 
 	var remoteDevs []RemoteDev
 	for rows.Next() {
 		var remoteDev RemoteDev
-		Sqlite.ScanRows(rows, &remoteDev)
+		GetSqlite().ScanRows(rows, &remoteDev)
+		db, _ := GetSqlite().DB()
+		db.Close()
 		remoteDevs = append(remoteDevs, remoteDev)
 	}
 
@@ -77,7 +75,9 @@ func RemoteSync() {
 	}
 
 	var oldRemoteDevs []RemoteDev
-	Sqlite.Find(&oldRemoteDevs)
+	GetSqlite().Find(&oldRemoteDevs)
+	db, _ := GetSqlite().DB()
+	db.Close()
 
 	var delDevCodes []string
 	var newRemoteDevs []RemoteDev
@@ -105,7 +105,9 @@ func RemoteSync() {
 			}
 			requestRemoteDevs = append(requestRemoteDevs, requestRemoteDev)
 		}
-		Sqlite.Create(&newRemoteDevs)
+		GetSqlite().Create(&newRemoteDevs)
+		db, _ = GetSqlite().DB()
+		db.Close()
 
 		requestRemoteDevsJson, _ := json.Marshal(&requestRemoteDevs)
 
@@ -114,10 +116,10 @@ func RemoteSync() {
 			postdata := fmt.Sprintf("delDevCodes=%s&requestRemoteDevs=%s", "", string(requestRemoteDevsJson))
 			res, err = utils.SyncServices(path, postdata)
 			if err != nil {
-				logging.Err.Error("post common/v1/sync_remote get error ", err)
+				logging.GetRemoteLogger().Error("post common/v1/sync_remote get error ", err)
 			}
 
-			logging.Norm.Infof("探视数据同步提交返回信息:", res)
+			logging.GetRemoteLogger().Infof("探视数据同步提交返回信息:", res)
 		}
 
 		return
@@ -198,12 +200,16 @@ func RemoteSync() {
 	var delDevCodesJson []byte
 	var requestRemoteDevsJson []byte
 	if len(delDevCodes) > 0 {
-		Sqlite.Where("dev_code in ?", delDevCodes).Delete(&RemoteDev{})
+		GetSqlite().Where("dev_code in ?", delDevCodes).Delete(&RemoteDev{})
+		db, _ = GetSqlite().DB()
+		db.Close()
 		delDevCodesJson, _ = json.Marshal(&delDevCodes)
 	}
 
 	if len(newRemoteDevs) > 0 {
-		Sqlite.Create(&newRemoteDevs)
+		GetSqlite().Create(&newRemoteDevs)
+		db, _ = GetSqlite().DB()
+		db.Close()
 	}
 	if len(requestRemoteDevs) > 0 {
 		requestRemoteDevsJson, _ = json.Marshal(&requestRemoteDevs)
@@ -214,10 +220,10 @@ func RemoteSync() {
 		var res interface{}
 		res, err = utils.SyncServices(path, postdata)
 		if err != nil {
-			logging.Err.Error(err)
+			logging.GetRemoteLogger().Error(err)
 		}
 
-		logging.Norm.Infof("探视数据同步提交返回信息:", res)
+		logging.GetRemoteLogger().Infof("探视数据同步提交返回信息:", res)
 	}
 
 	return

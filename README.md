@@ -21,7 +21,7 @@ RemoteSync.exe --action=cache_clear  // 清除 token 缓存
 #### 编译
 
 ```shell script
-go build -ldflags "-w -s -X main.Version=v1.0" -o ./cmd/RemoteSync.exe
+CGO_ENABLED=1 GOOS=windows GOARCH=amd64 CC=/usr/local/bin/x86_64-w64-mingw32-gcc CXX=/usr/local/bin/x86_64-w64-mingw32-g+ go build -ldflags "-w -s -X main.Version=v1.1" -race  -o ./cmd/RemoteSync.exe main.go
 ```
 
 #### 版本更新
