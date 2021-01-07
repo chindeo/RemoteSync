@@ -20,7 +20,7 @@ func GetRemoteLogger() *Logger {
 	remoteLogger = NewLogger(&Options{
 		Rolling:     DAILY,
 		TimesFormat: TIMESECOND,
-	}, filepath.Join(workDir, "./logs/rest.log"))
+	}, filepath.Join(workDir, "./logs/remote.log"))
 	remoteLogger.SetLogPrefix("log_prefix")
 	single.Unlock()
 	return remoteLogger
@@ -47,7 +47,7 @@ func GetUserTypeLogger() *Logger {
 	usertypeLogger = NewLogger(&Options{
 		Rolling:     DAILY,
 		TimesFormat: TIMESECOND,
-	}, filepath.Join(workDir, "./logs/device.log"))
+	}, filepath.Join(workDir, "./logs/user_type.log"))
 	usertypeLogger.SetLogPrefix("log_prefix")
 	single.Unlock()
 
