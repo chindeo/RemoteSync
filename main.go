@@ -28,7 +28,9 @@ func (p *program) Start(s service.Service) error {
 }
 
 func (p *program) run() {
-	go sync()
+	go func() {
+		sync()
+	}()
 }
 
 func sync() {
@@ -54,17 +56,9 @@ func sync() {
 			if utils.GetAppInfoCache() == nil {
 				logging.GetCommonLogger().Error("app info is empty")
 			}
-
-			go func() {
-				models.RemoteSync()
-			}()
-			go func() {
-				models.LocSync()
-			}()
-			go func() {
-				models.UserTypeSync()
-			}()
-
+			models.RemoteSync()
+			models.LocSync()
+			models.UserTypeSync()
 			logging.GetCommonLogger().Infof("执行数据同步", time.Now())
 		}
 		chSy <- 1
