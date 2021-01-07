@@ -155,9 +155,9 @@ func main() {
 	}
 
 	if *Action == "cache_clear" {
-		utils.CC.Delete(fmt.Sprintf("XToken_%s", utils.Config.Appid))
-		utils.CC.Delete(fmt.Sprintf("APPINFO_%s", utils.Config.Appid))
-		utils.CC.DeleteExpired()
+		utils.GetCache().Delete(fmt.Sprintf("XToken_%s", utils.Config.Appid))
+		utils.GetCache().Delete(fmt.Sprintf("APPINFO_%s", utils.Config.Appid))
+		utils.GetCache().DeleteExpired()
 		logging.GetCommonLogger().Info("清除缓存")
 		return
 	}

@@ -38,8 +38,8 @@ func SyncServices(path, data string) (interface{}, error) {
 	}
 
 	if re.Code == 401 {
-		CC.Delete(fmt.Sprintf("XToken_%s", Config.Appid))
-		CC.DeleteExpired()
+		GetCache().Delete(fmt.Sprintf("XToken_%s", Config.Appid))
+		GetCache().DeleteExpired()
 		if err := GetToken(); err != nil {
 			return nil, err
 		}
@@ -116,8 +116,8 @@ func GetAppInfo() error {
 		SetAppInfoCache(air.Data)
 		return nil
 	} else if air.Code == 401 {
-		CC.Delete(fmt.Sprintf("XToken_%s", Config.Appid))
-		CC.DeleteExpired()
+		GetCache().Delete(fmt.Sprintf("XToken_%s", Config.Appid))
+		GetCache().DeleteExpired()
 		//fmt.Println(fmt.Sprintf("get appinfo return response %+v", air))
 		return nil
 	} else {

@@ -7,24 +7,28 @@ import (
 	"time"
 )
 
-var CC *cache.Cache
+var cc *cache.Cache
 var ai *AppInfo
 var phpsess *http.Cookie
 var token string
 
-func init() {
-	CC = cache.New(1*time.Hour, 2*time.Hour)
+func GetCache() *cache.Cache {
+	if cc != nil {
+		return cc
+	}
+	cc = cache.New(1*time.Hour, 2*time.Hour)
+	return cc
 }
 
 func SetCacheToken(token string) {
-	CC.Set(fmt.Sprintf("XToken_%s", Config.Appid), token, cache.DefaultExpiration)
+	GetCache().Set(fmt.Sprintf("XToken_%s", Config.Appid), token, cache.DefaultExpiration)
 }
 
 func GetCacheToken() string {
 	if token != "" {
 		return token
 	}
-	foo, found := CC.Get(fmt.Sprintf("XToken_%s", Config.Appid))
+	foo, found := GetCache().Get(fmt.Sprintf("XToken_%s", Config.Appid))
 	if found {
 		token = foo.(string)
 	}
@@ -33,7 +37,7 @@ func GetCacheToken() string {
 func SetSessionId(cookies []*http.Cookie) {
 	for _, cookie := range cookies {
 		if cookie.Name == "PHPSESSID" {
-			CC.Set(fmt.Sprintf("PHPSESSIONID_%s", Config.Appid), cookie, cache.DefaultExpiration)
+			GetCache().Set(fmt.Sprintf("PHPSESSIONID_%s", Config.Appid), cookie, cache.DefaultExpiration)
 		}
 	}
 }
@@ -42,7 +46,7 @@ func GetSessionId() *http.Cookie {
 	if phpsess != nil {
 		return phpsess
 	}
-	foo, found := CC.Get(fmt.Sprintf("PHPSESSIONID_%s", Config.Appid))
+	foo, found := GetCache().Get(fmt.Sprintf("PHPSESSIONID_%s", Config.Appid))
 	if found {
 		phpsess = foo.(*http.Cookie)
 	}
@@ -59,7 +63,7 @@ type AppInfo struct {
 }
 
 func SetAppInfoCache(appInfo *AppInfo) {
-	CC.Set(fmt.Sprintf("APPINFO_%s", Config.Appid), appInfo, cache.DefaultExpiration)
+	GetCache().Set(fmt.Sprintf("APPINFO_%s", Config.Appid), appInfo, cache.DefaultExpiration)
 }
 
 func GetAppInfoCache() *AppInfo {
@@ -67,7 +71,7 @@ func GetAppInfoCache() *AppInfo {
 		return ai
 	}
 
-	foo, found := CC.Get(fmt.Sprintf("APPINFO_%s", Config.Appid))
+	foo, found := GetCache().Get(fmt.Sprintf("APPINFO_%s", Config.Appid))
 	if found {
 		ai = foo.(*AppInfo)
 	}
