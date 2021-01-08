@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/snowlyg/RemoteSync/logging"
 	"github.com/snowlyg/RemoteSync/utils"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -42,7 +43,7 @@ type RequestRemoteDev struct {
 	ApplicationId   int64  `json:"application_id"`
 }
 
-func RemoteSync() {
+func RemoteSync(remoteDevs []RemoteDev, requestRemoteDevsJson []byte, mysql *gorm.DB, logger *logging.Logger) {
 	appId := utils.GetAppID()
 	appName := utils.GetAppName()
 
@@ -55,16 +56,15 @@ func RemoteSync() {
 	query += " left join ct_hospital on pa_adm.ct_hospital_id = ct_hospital.hosp_id"
 	query += fmt.Sprintf(" where cf_device.dev_type = %s ", utils.Config.DevType)
 
-	rows, err := GetMysql().Raw(query).Rows()
+	rows, err := mysql.Raw(query).Rows()
 	if err != nil {
-		logging.GetRemoteLogger().Error("mysql raw error :", err)
+		logger.Error("mysql raw error :", err)
 	}
 	defer rows.Close()
 
-	var remoteDevs []RemoteDev
 	for rows.Next() {
 		var remoteDev RemoteDev
-		GetMysql().ScanRows(rows, &remoteDev)
+		mysql.ScanRows(rows, &remoteDev)
 		remoteDevs = append(remoteDevs, remoteDev)
 	}
 
@@ -96,18 +96,20 @@ func RemoteSync() {
 		requestRemoteDevs = append(requestRemoteDevs, requestRemoteDev)
 	}
 
-	var requestRemoteDevsJson []byte
 	requestRemoteDevsJson, err = json.Marshal(&requestRemoteDevs)
 	if len(requestRemoteDevsJson) > 0 {
 		var res interface{}
 		postData := fmt.Sprintf("&requestRemoteDevs=%s", string(requestRemoteDevsJson))
 		res, err = utils.SyncServices(path, postData)
 		if err != nil {
-			logging.GetRemoteLogger().Error("post common/v1/sync_remote get error ", err)
+			logger.Error("post common/v1/sync_remote get error ", err)
 		}
 
-		logging.GetRemoteLogger().Infof("探视数据同步提交返回信息:", res)
+		logger.Infof("探视数据同步提交返回信息:", res)
 	}
+
+	remoteDevs = nil
+	requestRemoteDevsJson = nil
 
 	return
 }

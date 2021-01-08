@@ -38,12 +38,12 @@ func SyncServices(path, data string) (interface{}, error) {
 	}
 
 	if re.Code == 401 {
-		GetCache().Delete(fmt.Sprintf("XToken_%s", Config.Appid))
-		GetCache().DeleteExpired()
-		if err := GetToken(); err != nil {
-			return nil, err
-		}
-		SyncServices(path, data)
+		fmt.Println(GetCacheToken())
+		SetCacheToken("")
+		//if err = GetToken(); err != nil {
+		//	return nil, err
+		//}
+		//SyncServices(path, data)
 		return re, nil
 	}
 
@@ -51,11 +51,6 @@ func SyncServices(path, data string) (interface{}, error) {
 }
 
 func GetToken() error {
-	token = GetCacheToken()
-	if token != "" {
-		return nil
-	}
-
 	var re getToken
 	result := Request(
 		"POST",
@@ -77,7 +72,7 @@ func GetToken() error {
 			return errors.New(fmt.Sprintf("get token return response %+v", re))
 		}
 		SetCacheToken(re.Data.AccessToken)
-		if err := GetAppInfo(); err != nil {
+		if err = GetAppInfo(); err != nil {
 			return err
 		}
 		return nil
@@ -112,13 +107,13 @@ func GetAppInfo() error {
 		if air.Data == nil {
 			return errors.New(fmt.Sprintf("get appinfo return response %+v", air))
 		}
-		//fmt.Println(fmt.Sprintf("get appinfo return response %+v", air))
+		fmt.Println(fmt.Sprintf("get appinfo return response %+v", air))
 		SetAppInfoCache(air.Data)
 		return nil
 	} else if air.Code == 401 {
 		GetCache().Delete(fmt.Sprintf("XToken_%s", Config.Appid))
 		GetCache().DeleteExpired()
-		//fmt.Println(fmt.Sprintf("get appinfo return response %+v", air))
+		fmt.Println(fmt.Sprintf("get appinfo return response %+v", air))
 		return nil
 	} else {
 		return errors.New(fmt.Sprintf("get appinfo return response %+v", air))
@@ -126,8 +121,8 @@ func GetAppInfo() error {
 }
 
 func Request(method, url, data string, auth bool) []byte {
-	timeout := 3
-	timeover := 3
+	timeout := 5
+	timeover := 10
 	T := time.Tick(time.Duration(timeover) * time.Second)
 	var result = make(chan []byte, 10)
 	t := time.Duration(timeout) * time.Second

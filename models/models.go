@@ -9,7 +9,6 @@ import (
 )
 
 var sqliteDB *gorm.DB
-var mysql *gorm.DB
 
 func GetSqlite() *gorm.DB {
 	var err error
@@ -28,15 +27,20 @@ func GetSqlite() *gorm.DB {
 }
 
 func GetMysql() *gorm.DB {
-	var err error
-	if mysql != nil {
-		return mysql
-	}
-	mysql, err = gorm.Open(my.Open(utils.Config.DB), &gorm.Config{})
+	mysql, err := gorm.Open(my.Open(utils.Config.DB), &gorm.Config{})
 	if err != nil {
 		fmt.Println(fmt.Sprintf("database mysql init error:%+v", err))
+		return nil
 	}
 
-	return mysql
+	db, _ := mysql.DB()
+	db.SetMaxIdleConns(100)
+	db.SetMaxOpenConns(100)
 
+	return mysql
+}
+
+func CloseMysql(mysql *gorm.DB) {
+	db, _ := mysql.DB()
+	db.Close()
 }

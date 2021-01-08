@@ -13,6 +13,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/kardianos/service"
+	_ "net/http/pprof"
 )
 
 var Version string
@@ -46,18 +47,31 @@ func sync() {
 	default:
 		tickerSync = time.NewTicker(time.Hour * time.Duration(t))
 	}
+	defer tickerSync.Stop()
+
+	mysql := models.GetMysql()
+	defer models.CloseMysql(mysql)
+
+	loggerU := logging.GetMyLogger("user_type")
+	loggerR := logging.GetMyLogger("remote")
+	loggerL := logging.GetMyLogger("loc")
+	var userTypes []models.UserType
+	var requestUserTypesJson []byte
+	var remoteDevs []models.RemoteDev
+	var requestRemoteDevsJson []byte
+	var locs []models.Loc
+	var requestLocsJson []byte
 	go func() {
 		for range tickerSync.C {
 			if err := utils.GetToken(); err != nil {
-				logging.GetCommonLogger().Error("get token err ", err)
+				fmt.Println(err)
 			}
 			if utils.GetAppInfoCache() == nil {
-				logging.GetCommonLogger().Error("app info is empty")
+				fmt.Println("app info nil")
 			}
-			models.RemoteSync()
-			models.LocSync()
-			models.UserTypeSync()
-			logging.GetCommonLogger().Infof("执行数据同步", time.Now())
+			models.RemoteSync(remoteDevs, requestRemoteDevsJson, mysql, loggerR)
+			models.LocSync(locs, requestLocsJson, mysql, loggerL)
+			models.UserTypeSync(userTypes, requestUserTypesJson, mysql, loggerU)
 		}
 		chSy <- 1
 	}()
@@ -72,6 +86,8 @@ func (p *program) Stop(s service.Service) error {
 var Action = flag.String("action", "", "程序操作指令")
 
 func main() {
+	logger := logging.GetMyLogger("common")
+	//defer logger.Sync()
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "usage: %s [options] [command]\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "Commands:\n")
@@ -94,62 +110,81 @@ func main() {
 	prg := &program{}
 	s, err := service.New(prg, svcConfig)
 	if err != nil {
-		logging.GetCommonLogger().Error(err)
+		logger.Error(err)
 	}
 
 	if err != nil {
-		logging.GetCommonLogger().Error(err)
+		logger.Error(err)
 	}
+
+	go func() {
+		http.ListenAndServe("localhost:6060", nil)
+	}()
 
 	if *Action == "install" {
 		err = s.Install()
 		if err != nil {
-			logging.GetCommonLogger().Error("服务安装错误：", err)
+			logger.Error("服务安装错误：", err)
 		}
 		err = s.Start()
 		if err != nil {
-			logging.GetCommonLogger().Error("服务启动错误", err)
+			logger.Error("服务启动错误", err)
 		}
-		logging.GetCommonLogger().Info("服务安装并启动")
+		logger.Info("服务安装并启动")
 		return
 	}
 
 	if *Action == "remote_sync" {
 		if err = utils.GetToken(); err != nil {
-			logging.GetCommonLogger().Error("get token err ", err)
+			logger.Error("get token err ", err)
 		}
 		if utils.GetAppInfoCache() == nil {
-			logging.GetCommonLogger().Error("app info is empty")
+			logger.Error("app info is empty")
 		}
-		models.RemoteSync()
-		logging.GetCommonLogger().Info("探视数据同步")
+		mysql := models.GetMysql()
+		defer models.CloseMysql(mysql)
+		loggerR := logging.GetMyLogger("remote")
+		var remoteDevs []models.RemoteDev
+		var requestRemoteDevsJson []byte
+		models.RemoteSync(remoteDevs, requestRemoteDevsJson, mysql, loggerR)
+		logger.Info("探视数据同步")
 
 		return
 	}
 
 	if *Action == "loc_sync" {
 		if err = utils.GetToken(); err != nil {
-			logging.GetCommonLogger().Error("get token err ", err)
+			logger.Error("get token err ", err)
 		}
 		if utils.GetAppInfoCache() == nil {
-			logging.GetCommonLogger().Error("app info is empty")
+			logger.Error("app info is empty")
 		}
-		models.LocSync()
+		mysql := models.GetMysql()
+		defer models.CloseMysql(mysql)
+		loggerL := logging.GetMyLogger("loc")
+		var locs []models.Loc
+		var requestLocsJson []byte
+		models.LocSync(locs, requestLocsJson, mysql, loggerL)
 
-		logging.GetCommonLogger().Info("科室数据同步")
+		logger.Info("科室数据同步")
 
 		return
 	}
 
 	if *Action == "user_type_sync" {
 		if err = utils.GetToken(); err != nil {
-			logging.GetCommonLogger().Error("get token err ", err)
+			logger.Error("get token err ", err)
 		}
 		if utils.GetAppInfoCache() == nil {
-			logging.GetCommonLogger().Error("app info is empty")
+			logger.Error("app info is empty")
 		}
-		models.UserTypeSync()
-		logging.GetCommonLogger().Info("职称数据同步")
+		mysql := models.GetMysql()
+		defer models.CloseMysql(mysql)
+		loggerU := logging.GetMyLogger("user_type")
+		var userTypes []models.UserType
+		var requestUserTypesJson []byte
+		models.UserTypeSync(userTypes, requestUserTypesJson, mysql, loggerU)
+		logger.Info("职称数据同步")
 
 		return
 	}
@@ -158,7 +193,7 @@ func main() {
 		utils.GetCache().Delete(fmt.Sprintf("XToken_%s", utils.Config.Appid))
 		utils.GetCache().Delete(fmt.Sprintf("APPINFO_%s", utils.Config.Appid))
 		utils.GetCache().DeleteExpired()
-		logging.GetCommonLogger().Info("清除缓存")
+		logger.Info("清除缓存")
 		return
 	}
 
@@ -167,24 +202,24 @@ func main() {
 		if status == service.StatusRunning {
 			err = s.Stop()
 			if err != nil {
-				logging.GetCommonLogger().Error("服务停止错误：", err)
+				logger.Error("服务停止错误：", err)
 			}
 		}
 
 		err = s.Uninstall()
 		if err != nil {
-			logging.GetCommonLogger().Error("服务卸载错误：", err)
+			logger.Error("服务卸载错误：", err)
 		}
-		logging.GetCommonLogger().Info("服务卸载成功")
+		logger.Info("服务卸载成功")
 		return
 	}
 
 	if *Action == "start" {
 		err = s.Start()
 		if err != nil {
-			logging.GetCommonLogger().Error("服务启动错误：", err)
+			logger.Error("服务启动错误：", err)
 		}
-		logging.GetCommonLogger().Info("服务启动成功")
+		logger.Info("服务启动成功")
 		return
 	}
 
@@ -198,24 +233,24 @@ func main() {
 	if *Action == "stop" {
 		err = s.Stop()
 		if err != nil {
-			logging.GetCommonLogger().Error("服务停止错误：", err)
+			logger.Error("服务停止错误：", err)
 		}
-		logging.GetCommonLogger().Info("服务停止成功")
+		logger.Info("服务停止成功")
 		return
 	}
 
 	if *Action == "restart" {
 		err = s.Restart()
 		if err != nil {
-			logging.GetCommonLogger().Error("服务重启错误：", err)
+			logger.Error("服务重启错误：", err)
 		}
 
-		logging.GetCommonLogger().Info("服务重启成功")
+		logger.Info("服务重启成功")
 		return
 	}
 
 	if *Action == "version" {
-		logging.GetCommonLogger().Info(fmt.Sprintf("版本号：%s", Version))
+		logger.Info(fmt.Sprintf("版本号：%s", Version))
 		return
 	}
 

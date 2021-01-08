@@ -10,7 +10,6 @@ import (
 var cc *cache.Cache
 var ai *AppInfo
 var phpsess *http.Cookie
-var token string
 
 func GetCache() *cache.Cache {
 	if cc != nil {
@@ -25,14 +24,11 @@ func SetCacheToken(token string) {
 }
 
 func GetCacheToken() string {
-	if token != "" {
-		return token
-	}
 	foo, found := GetCache().Get(fmt.Sprintf("XToken_%s", Config.Appid))
 	if found {
-		token = foo.(string)
+		return foo.(string)
 	}
-	return token
+	return ""
 }
 func SetSessionId(cookies []*http.Cookie) {
 	for _, cookie := range cookies {
@@ -70,7 +66,6 @@ func GetAppInfoCache() *AppInfo {
 	if ai != nil {
 		return ai
 	}
-
 	foo, found := GetCache().Get(fmt.Sprintf("APPINFO_%s", Config.Appid))
 	if found {
 		ai = foo.(*AppInfo)
