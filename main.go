@@ -13,7 +13,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/kardianos/service"
-	_ "net/http/pprof"
+	//_ "net/http/pprof"
 )
 
 var Version string
@@ -86,8 +86,11 @@ func (p *program) Stop(s service.Service) error {
 var Action = flag.String("action", "", "程序操作指令")
 
 func main() {
+	//go func() {
+	//	http.ListenAndServe("localhost:6060", nil)
+	//}()
+
 	logger := logging.GetMyLogger("common")
-	//defer logger.Sync()
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "usage: %s [options] [command]\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "Commands:\n")
@@ -116,10 +119,6 @@ func main() {
 	if err != nil {
 		logger.Error(err)
 	}
-
-	go func() {
-		http.ListenAndServe("localhost:6060", nil)
-	}()
 
 	if *Action == "install" {
 		err = s.Install()
