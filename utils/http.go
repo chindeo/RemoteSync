@@ -38,12 +38,10 @@ func SyncServices(path, data string) (interface{}, error) {
 	}
 
 	if re.Code == 401 {
-		fmt.Println(GetCacheToken())
-		SetCacheToken("")
-		//if err = GetToken(); err != nil {
-		//	return nil, err
-		//}
-		//SyncServices(path, data)
+		err = GetToken()
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("get token ：%v ", err))
+		}
 		return re, nil
 	}
 
@@ -107,13 +105,13 @@ func GetAppInfo() error {
 		if air.Data == nil {
 			return errors.New(fmt.Sprintf("get appinfo return response %+v", air))
 		}
-		fmt.Println(fmt.Sprintf("get appinfo return response %+v", air))
 		SetAppInfoCache(air.Data)
 		return nil
 	} else if air.Code == 401 {
-		GetCache().Delete(fmt.Sprintf("XToken_%s", Config.Appid))
-		GetCache().DeleteExpired()
-		fmt.Println(fmt.Sprintf("get appinfo return response %+v", air))
+		err = GetToken()
+		if err != nil {
+			return err
+		}
 		return nil
 	} else {
 		return errors.New(fmt.Sprintf("get appinfo return response %+v", air))

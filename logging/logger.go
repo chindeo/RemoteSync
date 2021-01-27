@@ -69,10 +69,10 @@ var scene sync.Map
 func init() {
 	_defaultLogger = New()
 	scene.Store(DefaultLoggerName, _defaultLogger)
-	scene.Store(SlowLoggerName, slowlog)
-	scene.Store(GenLoggerName, genlog)
-	scene.Store(CrashLoggerName, crashlog)
-	scene.Store(BalanceLoggerName, balancelog)
+	//scene.Store(SlowLoggerName, slowlog)
+	//scene.Store(GenLoggerName, genlog)
+	//scene.Store(CrashLoggerName, crashlog)
+	//scene.Store(BalanceLoggerName, balancelog)
 	//logs[DefaultLoggerName] = _defaultLogger
 	//logs[SlowLoggerName] = slowlog
 	//logs[GenLoggerName] = genlog

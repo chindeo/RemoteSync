@@ -13,7 +13,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/kardianos/service"
-	//_ "net/http/pprof"
+	_ "net/http/pprof"
 )
 
 var Version string
@@ -86,9 +86,9 @@ func (p *program) Stop(s service.Service) error {
 var Action = flag.String("action", "", "程序操作指令")
 
 func main() {
-	//go func() {
-	//	http.ListenAndServe("localhost:6060", nil)
-	//}()
+	go func() {
+		http.ListenAndServe("localhost:6060", nil)
+	}()
 
 	logger := logging.GetMyLogger("common")
 	flag.Usage = func() {
@@ -222,12 +222,12 @@ func main() {
 		return
 	}
 
-	if *Action == "auto_migrate" {
-		err = models.GetSqlite().AutoMigrate(&models.RemoteDev{}, &models.Loc{}, &models.UserType{})
-		if err != nil {
-			fmt.Println(fmt.Sprintf("database model init error:%+v", err))
-		}
-	}
+	//if *Action == "auto_migrate" {
+	//	err = models.GetSqlite().AutoMigrate(&models.RemoteDev{}, &models.Loc{}, &models.UserType{})
+	//	if err != nil {
+	//		fmt.Println(fmt.Sprintf("database model init error:%+v", err))
+	//	}
+	//}
 
 	if *Action == "stop" {
 		err = s.Stop()

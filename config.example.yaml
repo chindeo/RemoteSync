@@ -6,4 +6,4 @@ timetype: m # h,m,s 同步频率类型
 timeduration: 1 #同步频率
 devtype: 2 #设备类型
 authtype: 2 #token 认证类型 1：小程序 ，2：服务， 4：设备
-outdir:
+outdir: /Users/snowlyg/go/src/github.com/snowlyg/RemoteSync
