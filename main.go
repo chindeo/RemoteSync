@@ -48,19 +48,9 @@ func sync() {
 		tickerSync = time.NewTicker(time.Hour * time.Duration(t))
 	}
 	defer tickerSync.Stop()
-
-	mysql := models.GetMysql()
-	defer models.CloseMysql(mysql)
-
-	loggerU := logging.GetMyLogger("user_type")
-	loggerR := logging.GetMyLogger("remote")
-	loggerL := logging.GetMyLogger("loc")
-	var userTypes []models.UserType
-	var requestUserTypesJson []byte
-	var remoteDevs []models.RemoteDev
-	var requestRemoteDevsJson []byte
-	var locs []models.Loc
-	var requestLocsJson []byte
+	models.RemoteSync()
+	models.LocSync()
+	models.UserTypeSync()
 	go func() {
 		for range tickerSync.C {
 			if err := utils.GetToken(); err != nil {
@@ -69,9 +59,9 @@ func sync() {
 			if utils.GetAppInfoCache() == nil {
 				fmt.Println("app info nil")
 			}
-			models.RemoteSync(remoteDevs, requestRemoteDevsJson, mysql, loggerR)
-			models.LocSync(locs, requestLocsJson, mysql, loggerL)
-			models.UserTypeSync(userTypes, requestUserTypesJson, mysql, loggerU)
+			models.RemoteSync()
+			models.LocSync()
+			models.UserTypeSync()
 		}
 		chSy <- 1
 	}()
@@ -130,69 +120,6 @@ func main() {
 			logger.Error("服务启动错误", err)
 		}
 		logger.Info("服务安装并启动")
-		return
-	}
-
-	if *Action == "remote_sync" {
-		if err = utils.GetToken(); err != nil {
-			logger.Error("get token err ", err)
-		}
-		if utils.GetAppInfoCache() == nil {
-			logger.Error("app info is empty")
-		}
-		mysql := models.GetMysql()
-		defer models.CloseMysql(mysql)
-		loggerR := logging.GetMyLogger("remote")
-		var remoteDevs []models.RemoteDev
-		var requestRemoteDevsJson []byte
-		models.RemoteSync(remoteDevs, requestRemoteDevsJson, mysql, loggerR)
-		logger.Info("探视数据同步")
-
-		return
-	}
-
-	if *Action == "loc_sync" {
-		if err = utils.GetToken(); err != nil {
-			logger.Error("get token err ", err)
-		}
-		if utils.GetAppInfoCache() == nil {
-			logger.Error("app info is empty")
-		}
-		mysql := models.GetMysql()
-		defer models.CloseMysql(mysql)
-		loggerL := logging.GetMyLogger("loc")
-		var locs []models.Loc
-		var requestLocsJson []byte
-		models.LocSync(locs, requestLocsJson, mysql, loggerL)
-
-		logger.Info("科室数据同步")
-
-		return
-	}
-
-	if *Action == "user_type_sync" {
-		if err = utils.GetToken(); err != nil {
-			logger.Error("get token err ", err)
-		}
-		if utils.GetAppInfoCache() == nil {
-			logger.Error("app info is empty")
-		}
-		mysql := models.GetMysql()
-		defer models.CloseMysql(mysql)
-		loggerU := logging.GetMyLogger("user_type")
-		var userTypes []models.UserType
-		var requestUserTypesJson []byte
-		models.UserTypeSync(userTypes, requestUserTypesJson, mysql, loggerU)
-		logger.Info("职称数据同步")
-
-		return
-	}
-
-	if *Action == "cache_clear" {
-		utils.GetCache().Delete(fmt.Sprintf("XToken_%s", utils.Config.Appid))
-		utils.GetCache().Delete(fmt.Sprintf("APPINFO_%s", utils.Config.Appid))
-		utils.GetCache().DeleteExpired()
-		logger.Info("清除缓存")
 		return
 	}
 

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/snowlyg/RemoteSync/logging"
 	"github.com/snowlyg/RemoteSync/utils"
-	"gorm.io/gorm"
 	"time"
 )
 
@@ -32,7 +31,16 @@ type RequestUserType struct {
 	ApplicationId   int64  `json:"application_id"`
 }
 
-func UserTypeSync(userTypes []UserType, requestUserTypesJson []byte, mysql *gorm.DB, logger *logging.Logger) {
+func UserTypeSync() {
+	logger := logging.GetMyLogger("user_type")
+	var userTypes []UserType
+	var requestUserTypesJson []byte
+	mysql, err := GetMysql()
+	if err != nil {
+		fmt.Println(fmt.Sprintf("get mysql error %+v", err))
+		return
+	}
+	defer CloseMysql(mysql)
 	appId := utils.GetAppID()
 	appName := utils.GetAppName()
 
@@ -40,6 +48,7 @@ func UserTypeSync(userTypes []UserType, requestUserTypesJson []byte, mysql *gorm
 	rows, err := mysql.Raw(query).Rows()
 	if err != nil {
 		logger.Error("mysql raw error :", err)
+		return
 	}
 	defer rows.Close()
 
