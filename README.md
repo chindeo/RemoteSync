@@ -21,7 +21,7 @@ RemoteSync.exe --action=cache_clear  // 清除 token 缓存
 #### 编译
 
 ```shell script
-GOOS=windows GOARCH=amd64 CC=/usr/local/bin/x86_64-w64-mingw32-gcc CXX=/usr/local/bin/x86_64-w64-mingw32-g+ go build -ldflags "-w -s -X main.Version=v1.1.2" -race  -o ./cmd/RemoteSync.exe main.go
+GOOS=windows GOARCH=amd64 CC=/usr/local/bin/x86_64-w64-mingw32-gcc CXX=/usr/local/bin/x86_64-w64-mingw32-g+ go build -ldflags "-w -s -X main.Version=v1.1.2" -o ./cmd/RemoteSync.exe main.go
 ```
 
 #### 版本更新
@@ -30,4 +30,5 @@ GOOS=windows GOARCH=amd64 CC=/usr/local/bin/x86_64-w64-mingw32-gcc CXX=/usr/loca
 - v1.1 修复并发问题
 - v1.1.1 修复长时间运行token会失效问题
 - v1.1.2 部分优化
+- v1.1.3 优化变量重复创建问题
 

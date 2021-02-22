@@ -3,17 +3,19 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/snowlyg/RemoteSync/logging"
-	"github.com/snowlyg/RemoteSync/models"
-	"github.com/snowlyg/RemoteSync/utils"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/snowlyg/RemoteSync/logging"
+	"github.com/snowlyg/RemoteSync/models"
+	"github.com/snowlyg/RemoteSync/utils"
+
+	_ "net/http/pprof"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/kardianos/service"
-	_ "net/http/pprof"
 )
 
 var Version string
@@ -48,20 +50,32 @@ func sync() {
 		tickerSync = time.NewTicker(time.Hour * time.Duration(t))
 	}
 	defer tickerSync.Stop()
-	models.RemoteSync()
-	models.LocSync()
-	models.UserTypeSync()
+
+	loggerR := logging.GetMyLogger("remote")
+	var remoteDevs []models.RemoteDev
+	var requestRemoteDevsJSON []byte
+	models.RemoteSync(remoteDevs, requestRemoteDevsJSON, loggerR)
+
+	logger := logging.GetMyLogger("loc")
+	var locs []models.Loc
+	var requestLocsJSON []byte
+	models.LocSync(locs, requestLocsJSON, logger)
+
+	loggerU := logging.GetMyLogger("user_type")
+	var userTypes []models.UserType
+	var requestUserTypesJSON []byte
+	models.UserTypeSync(userTypes, requestUserTypesJSON, loggerU)
+	if err := utils.GetToken(); err != nil {
+		fmt.Println(err)
+	}
+	if utils.GetAppInfoCache() == nil {
+		fmt.Println("app info nil")
+	}
 	go func() {
 		for range tickerSync.C {
-			if err := utils.GetToken(); err != nil {
-				fmt.Println(err)
-			}
-			if utils.GetAppInfoCache() == nil {
-				fmt.Println("app info nil")
-			}
-			models.RemoteSync()
-			models.LocSync()
-			models.UserTypeSync()
+			models.RemoteSync(remoteDevs, requestRemoteDevsJSON, loggerR)
+			models.LocSync(locs, requestLocsJSON, logger)
+			models.UserTypeSync(userTypes, requestUserTypesJSON, loggerU)
 		}
 		chSy <- 1
 	}()

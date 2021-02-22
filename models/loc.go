@@ -3,9 +3,10 @@ package models
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/snowlyg/RemoteSync/logging"
 	"github.com/snowlyg/RemoteSync/utils"
-	"time"
 )
 
 type Loc struct {
@@ -27,10 +28,10 @@ type RequestLoc struct {
 	ApplicationId   int64  `json:"application_id"`
 }
 
-func LocSync() {
-	logger := logging.GetMyLogger("loc")
-	var locs []Loc
-	var requestLocsJson []byte
+func LocSync(locs []Loc, requestLocsJson []byte, logger *logging.Logger) {
+	// logger := logging.GetMyLogger("loc")
+	// var locs []Loc
+	// var requestLocsJson []byte
 	mysql, err := GetMysql()
 	if err != nil {
 		fmt.Println(fmt.Sprintf("get mysql error %+v", err))

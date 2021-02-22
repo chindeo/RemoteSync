@@ -3,9 +3,10 @@ package models
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/snowlyg/RemoteSync/logging"
 	"github.com/snowlyg/RemoteSync/utils"
-	"time"
 )
 
 type UserType struct {
@@ -31,10 +32,10 @@ type RequestUserType struct {
 	ApplicationId   int64  `json:"application_id"`
 }
 
-func UserTypeSync() {
-	logger := logging.GetMyLogger("user_type")
-	var userTypes []UserType
-	var requestUserTypesJson []byte
+func UserTypeSync(userTypes []UserType, requestUserTypesJson []byte, logger *logging.Logger) {
+	// logger := logging.GetMyLogger("user_type")
+	// var userTypes []UserType
+	// var requestUserTypesJson []byte
 	mysql, err := GetMysql()
 	if err != nil {
 		fmt.Println(fmt.Sprintf("get mysql error %+v", err))
@@ -90,6 +91,7 @@ func UserTypeSync() {
 		}
 		logger.Infof("职位数据同步提交返回信息:", res)
 	}
-
+	userTypes = nil
+	requestUserTypesJson = nil
 	return
 }
