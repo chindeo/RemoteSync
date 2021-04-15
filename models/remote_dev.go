@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/snowlyg/RemoteSync/logging"
-	"github.com/snowlyg/RemoteSync/utils"
+	"github.com/chindeo/RemoteSync/utils"
+	"github.com/chindeo/pkg/logging"
+	"github.com/chindeo/pkg/net"
 )
 
 type RemoteDev struct {
@@ -43,19 +44,26 @@ type RequestRemoteDev struct {
 	ApplicationId   int64  `json:"application_id"`
 }
 
-func RemoteSync(remoteDevs []RemoteDev, requestRemoteDevsJson []byte, logger *logging.Logger) {
-	// logger := logging.GetMyLogger("remote")
-	// var remoteDevs []RemoteDev
-	// var requestRemoteDevsJson []byte
+func RemoteSync() {
+	druation := utils.GetDuration(utils.Config.Timeduration, utils.Config.Timetype)
+	logger := logging.GetMyLogger("remote")
+	var remoteDevs []RemoteDev
+	var requestRemoteDevsJSON []byte
+	go func() {
+		for {
+			remote(remoteDevs, requestRemoteDevsJSON, logger)
+			time.Sleep(druation)
+		}
+	}()
+}
+
+func remote(remoteDevs []RemoteDev, requestRemoteDevsJson []byte, logger *logging.Logger) {
 	mysql, err := GetMysql()
 	if err != nil {
 		fmt.Println(fmt.Sprintf("get mysql error %+v", err))
 		return
 	}
 	defer CloseMysql(mysql)
-
-	appId := utils.GetAppID()
-	appName := utils.GetAppName()
 
 	query := "select ct_loc.loc_desc as loc_name, pa_patmas.pmi_name as name ,pa_adm.adm_in_pat_no,ct_hospital.hosp_desc as ct_hospital_name, pac_room.room_desc as pac_room_desc,pac_bed.bed_code as pac_bed_desc,dev_code,dev_desc,dev_type,dev_active,dev_status,dev_video_status  from cf_device "
 	query += " left join pa_adm on pa_adm.pac_bed_id = cf_device.pac_bed_id"
@@ -82,12 +90,12 @@ func RemoteSync(remoteDevs []RemoteDev, requestRemoteDevsJson []byte, logger *lo
 	if len(remoteDevs) == 0 {
 		return
 	}
-
+	appinfo, err := utils.GetAppInfo()
+	if err != nil {
+		fmt.Printf("GetAppInfo : %v", err)
+		return
+	}
 	var requestRemoteDevs []*RequestRemoteDev
-
-	// 没有旧数据
-	path := "common/v1/data_sync/remote"
-
 	for _, re := range remoteDevs {
 		requestRemoteDev := &RequestRemoteDev{
 			Name:            re.Name,
@@ -101,22 +109,26 @@ func RemoteSync(remoteDevs []RemoteDev, requestRemoteDevsJson []byte, logger *lo
 			DevVideoStatus:  re.DevVideoStatus,
 			CtHospitalName:  re.CtHospitalName,
 			LocName:         re.LocName,
-			ApplicationId:   appId,
-			ApplicationName: appName,
+			ApplicationId:   appinfo.Id,
+			ApplicationName: appinfo.Name,
 		}
 		requestRemoteDevs = append(requestRemoteDevs, requestRemoteDev)
 	}
 
 	requestRemoteDevsJson, err = json.Marshal(&requestRemoteDevs)
 	if len(requestRemoteDevsJson) > 0 {
-		var res interface{}
-		postData := fmt.Sprintf("&requestRemoteDevs=%s", string(requestRemoteDevsJson))
-		res, err = utils.SyncServices(path, postData)
-		if err != nil {
-			logger.Error("post common/v1/sync_remote get error ", err)
+		// 没有旧数据
+		path := "/common/v1/data_sync/remote"
+		serviceResponse := &net.ServerResponse{
+			FullPath:     utils.Config.Host + path,
+			Auth:         true,
+			ResponseInfo: &net.ResponseInfo{},
 		}
-
-		logger.Infof("探视数据同步提交返回信息:", res)
+		_, err = net.NetClient.POSTNet(serviceResponse, fmt.Sprintf("&requestRemoteDevs=%s", string(requestRemoteDevsJson)))
+		if err != nil {
+			logger.Error(err)
+		}
+		logger.Infof("探视数据同步提交返回信息:", serviceResponse.ResponseInfo)
 	}
 
 	remoteDevs = nil

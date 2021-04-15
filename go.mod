@@ -1,14 +1,13 @@
-module github.com/snowlyg/RemoteSync
+module github.com/chindeo/RemoteSync
 
-go 1.15
+go 1.16
 
 require (
-	github.com/go-sql-driver/mysql v1.5.0
+	github.com/chindeo/pkg v0.0.0-20210329004620-b71df0f2bf82
+	github.com/go-sql-driver/mysql v1.6.0
 	github.com/jinzhu/configor v1.2.1
-	github.com/kardianos/service v1.2.0
-	github.com/opentracing/opentracing-go v1.2.0
-	github.com/patrickmn/go-cache v2.1.0+incompatible
-	go.uber.org/zap v1.16.0
-	gorm.io/driver/mysql v1.0.3
-	gorm.io/gorm v1.20.8
+	gorm.io/driver/mysql v1.0.5
+	gorm.io/gorm v1.21.7
 )
+
+replace github.com/chindeo/pkg v0.0.0-20210329004620-b71df0f2bf82 => D:/go/src/github.com/chindeo/pkg

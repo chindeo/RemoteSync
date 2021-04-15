@@ -2,7 +2,8 @@ package models
 
 import (
 	"fmt"
-	"github.com/snowlyg/RemoteSync/utils"
+
+	"github.com/chindeo/RemoteSync/utils"
 	my "gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
