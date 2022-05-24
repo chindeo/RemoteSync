@@ -102,7 +102,7 @@ func remote(logger *logging.Logger) {
 		return
 	}
 
-	var sipUsersNames map[uint]string
+	sipUsersNames := make(map[uint]string, len(remoteDevs))
 	for _, re := range remoteDevs {
 		for _, re1 := range remoteDevs {
 			if re1.ID == re.DevBindId {
