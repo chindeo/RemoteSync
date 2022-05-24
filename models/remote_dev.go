@@ -104,10 +104,8 @@ func remote(logger *logging.Logger) {
 
 	sipUsersNames := make(map[uint]string, len(remoteDevs))
 	for _, re := range remoteDevs {
-		for _, re1 := range remoteDevs {
-			if re1.ID == re.DevBindId {
-				sipUsersNames[re.DevBindId] = re1.SipUsersName
-			}
+		if re.SipUsersName != "" {
+			sipUsersNames[re.DevBindId] = re.SipUsersName
 		}
 	}
 
