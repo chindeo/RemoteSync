@@ -13,7 +13,7 @@ var Config = struct {
 	DB           string `default:"" env:"db"`
 	Timetype     string `default:"" env:"timetype"`
 	Timeduration int64  `default:"" env:"timeduration"`
-	DevType      string `default:"2" env:"devtype"` // device type 设备类型
+	DevType      int64  `default:"2" env:"devtype"` // device type 设备类型
 	AuthType     string `default:"2" env:"authtype"`
 	Outdir       string `default:"" env:"outdir"`
 	Timeout      int64  `default:"10" env:"timeout"`
