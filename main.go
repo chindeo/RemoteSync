@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
 
 	"github.com/chindeo/RemoteSync/models"
 	"github.com/chindeo/RemoteSync/utils"
@@ -22,16 +21,6 @@ func main() {
 	// go func() {
 	// 	http.ListenAndServe("localhost:6060", nil)
 	// }()
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "usage: %s [options] [command]\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "Commands:\n")
-		fmt.Fprintf(os.Stderr, "\n")
-		fmt.Fprintf(os.Stderr, "  -action= <install remove start stop restart version remote_sync loc_sync user_type_sync cache_clear>\n")
-		fmt.Fprintf(os.Stderr, "    程序操作指令 \n")
-		fmt.Fprintf(os.Stderr, "\n")
-	}
-
-	flag.Parse()
 	utils.InitConfig()
 	loginData := fmt.Sprintf("app_id=%s&app_secret=%s", utils.Config.Appid, utils.Config.Appsecret)
 	err := net.NewNetClient(&net.Config{
@@ -43,7 +32,7 @@ func main() {
 		TimeOver:   utils.Config.Timeover,
 		TimeOut:    utils.Config.Timeout,
 		// TokenDriver: "redis",
-		// Host:        "127.0.0.1:6379",
+		// Host:        "10.0.0.26:6379",
 		// Pwd:         "Chindeo",
 		Headers: map[string]string{
 			"AuthType": utils.Config.AuthType,

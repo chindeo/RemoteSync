@@ -31,6 +31,9 @@ func GetAppInfo() (*AppInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// fmt.Println(string(result))
+
 	responseAppInfo := &ResponseAppInfo{}
 	err = json.Unmarshal(result, responseAppInfo)
 	if err != nil {
