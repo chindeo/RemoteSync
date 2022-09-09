@@ -22,7 +22,7 @@ func main() {
 	// 	http.ListenAndServe("localhost:6060", nil)
 	// }()
 	utils.InitConfig()
-	loginData := fmt.Sprintf("app_id=%s&app_secret=%s", utils.Config.Appid, utils.Config.Appsecret)
+	loginData := fmt.Sprintf("type=%s&app_id=%s&app_secret=%s", utils.Config.RoleType, utils.Config.Appid, utils.Config.Appsecret)
 	err := net.NewNetClient(&net.Config{
 		Appid:      utils.Config.Appid,
 		AppSecret:  utils.Config.Appsecret,

@@ -18,9 +18,10 @@ var Config = struct {
 	Outdir       string `default:"" env:"outdir"`
 	Timeout      int64  `default:"10" env:"timeout"`
 	Timeover     int64  `default:"5" env:"timeover"`
-	Loginuri     string `default:"/api/v1/get_access_token" env:"Loginuri"`
-	Refreshuri   string `default:"/api/v1/refresh_token" env:"Refreshuri"`
-	IsDev        string `default:"" env:"Isdev"`
+	Loginuri     string `default:"/api/v1/get_access_token" env:"loginuri"`
+	Refreshuri   string `default:"/api/v1/refresh_token" env:"refreshuri"`
+	IsDev        string `default:"" env:"isdev"`
+	RoleType     string `default:"1" env:"roletype"`
 }{}
 
 func InitConfig() {
