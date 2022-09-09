@@ -23,7 +23,7 @@ type ResponseAppInfo struct {
 
 func GetAppInfo() (*AppInfo, error) {
 	serviceResponse := &net.ServerResponse{
-		FullPath:     Config.Host + "/api/v1/application",
+		FullPath:     Config.Host + "/api/v1/profile/hospital",
 		Auth:         true,
 		ResponseInfo: &net.ResponseInfo{},
 	}
