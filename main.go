@@ -37,6 +37,7 @@ func main() {
 		Headers: map[string]string{
 			"AuthType": utils.Config.AuthType,
 			"MAC":      utils.Config.Appid,
+			"IsDev":    utils.Config.IsDev,
 		},
 	})
 	if err != nil {

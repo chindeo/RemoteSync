@@ -7,3 +7,4 @@ timeduration: 1 #同步频率
 devtype: 2 #设备类型
 authtype: 4 #token 认证类型 1：小程序 2:app， 3:公众号，4：服务
 outdir: /Users/snowlyg/go/src/github.com/snowlyg/RemoteSync
+isdev: ""

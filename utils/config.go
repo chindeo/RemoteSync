@@ -20,6 +20,7 @@ var Config = struct {
 	Timeover     int64  `default:"5" env:"timeover"`
 	Loginuri     string `default:"/api/v1/get_access_token" env:"Loginuri"`
 	Refreshuri   string `default:"/api/v1/refresh_token" env:"Refreshuri"`
+	IsDev        string `default:"" env:"Isdev"`
 }{}
 
 func InitConfig() {
